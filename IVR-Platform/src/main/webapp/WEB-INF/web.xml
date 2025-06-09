@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="4.0" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd">
+    <servlet>
+        <servlet-name>usersServelt</servlet-name>
+        <servlet-class>com.ivr.platform.controler.userServelt</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>VxmlServelt</servlet-name>
+        <servlet-class>com.ivr.platform.controler.vxmlServelt</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>loginServelt</servlet-name>
+        <servlet-class>com.ivr.platform.controler.loginServelt</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>logoutServelt</servlet-name>
+        <servlet-class>com.ivr.platform.controler.logoutServelt</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>usersServelt</servlet-name>
+        <url-pattern>/usersServelt</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>VxmlServelt</servlet-name>
+        <url-pattern>/VxmlServelt</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>loginServelt</servlet-name>
+        <url-pattern>/loginServelt</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>logoutServelt</servlet-name>
+        <url-pattern>/logoutServelt</url-pattern>
+    </servlet-mapping>
+    <session-config>
+        <session-timeout>
+            30
+        </session-timeout>
+    </session-config>
+</web-app>
