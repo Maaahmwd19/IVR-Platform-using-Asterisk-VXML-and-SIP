@@ -12,6 +12,8 @@
         <title>JSP Page</title>
     </head>
     <body>
+        <jsp:include page="/jsp/includes/sidebar.jsp" />
+        <jsp:include page="/jsp/includes/header.jsp" />
         <h1>Hello World!</h1>
     </body>
 </html>
