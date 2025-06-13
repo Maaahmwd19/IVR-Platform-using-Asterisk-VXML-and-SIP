@@ -1,1 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <Context docBase="/opt/tomcat/tomcat9/webapps/IVR-Platform-1.0-SNAPSHOT.war" path="/IVR-Platform" reloadable="true"/>

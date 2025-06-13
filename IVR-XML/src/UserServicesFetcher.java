@@ -8,6 +8,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+
 public class UserServicesFetcher {
 
     public static String fetchActiveServices(String msisdn) {
@@ -48,19 +49,16 @@ public class UserServicesFetcher {
         return activeServices.isEmpty() ? "no" : String.join(" ", activeServices);
     }
 
-    public static void speakActiveServices(AgiChannel channel, String msisdn) throws Exception {
-        String services = fetchActiveServices(msisdn);
-        if ("no".equals(services)) {
-            // Play a prompt indicating no services (use a generic phrase)
-            channel.exec("SayAlpha", "no services");
-        } else {
-            // Split the services string into individual words for pronunciation
-            String[] serviceWords = services.split("\\s+");
-            for (String word : serviceWords) {
-                // Use SayAlpha for each word to approximate pronunciation
-                // Note: This is a fallback; TTS would be better
-                channel.exec("SayAlpha", word);
-            }
-        }
-    }
+	public static void speakActiveServices(AgiChannel channel, String msisdn) throws Exception {
+	    String services = fetchActiveServices(msisdn);
+	    if ("no".equalsIgnoreCase(services)) {
+		System.out.println("Festival will say: No active services");
+		channel.exec("Festival", "\"No active services\"");
+	    } else {
+		System.out.println("Festival will say: " + services);
+		channel.exec("Festival", "\"" + services + "\"");
+	    }
+	}
+
 }
+

@@ -30,6 +30,10 @@ public class IVRScript implements AgiScript {
                 }
             }
 
+            // نطق الخدمات النشطة باستخدام Festival
+            String msisdn = request.getCallerIdNumber(); // رقم المتصل الحقيقي
+            UserServicesFetcher.speakActiveServices(channel, msisdn);
+
             channel.hangup();
         } catch (Exception e) {
             System.err.println("AGI Script error: " + e.getMessage());
