@@ -67,6 +67,13 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.12.5</version>
         </dependency>
+        <!-- HTTP Client for VXML interpreter -->
+        <dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+            <version>3.1</version>
+        </dependency>
+
     </dependencies>
 
     <build>

@@ -8,7 +8,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
-@WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
+
+//@WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
+@WebServlet("/testLogin")
 public class LoginServlet extends HttpServlet {
     private static final String USERNAME = "admin"; // Replace with actual authentication logic
     private static final String PASSWORD = "123"; // Replace with actual authentication logic
@@ -21,7 +23,7 @@ public class LoginServlet extends HttpServlet {
 
         if (username == null || password == null || username.isEmpty() || password.isEmpty()) {
             request.setAttribute("error", "Username and password are required");
-            request.getRequestDispatcher("/login.jsp").forward(request, response);
+            request.getRequestDispatcher("/Login.jsp").forward(request, response);
             return;
         }
 
@@ -31,7 +33,7 @@ public class LoginServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/jsp/dashboard/dashboard.jsp");
         } else {
             request.setAttribute("error", "Invalid username or password");
-            request.getRequestDispatcher("/login.jsp").forward(request, response);
+            request.getRequestDispatcher("/Login.jsp").forward(request, response);
         }
     }
 
