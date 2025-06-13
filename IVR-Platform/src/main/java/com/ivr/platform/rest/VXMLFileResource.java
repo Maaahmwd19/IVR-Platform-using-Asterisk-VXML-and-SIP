@@ -40,24 +40,32 @@ public class VXMLFileResource {
         }
     }
 
-    @POST
-    public Response createVXMLFile(VXMLFile vxmlFile) {
-        if (vxmlFile.getFileName() == null || vxmlFile.getFilePath() == null || vxmlFile.getShortCode() == null) {
-            throw new WebApplicationException("Missing required fields", Response.Status.BAD_REQUEST);
-        }
-        EntityManager em = emf.createEntityManager();
-        try {
-            em.getTransaction().begin();
-            em.persist(vxmlFile);
-            em.getTransaction().commit();
-            return Response.status(Response.Status.CREATED).entity(vxmlFile).build();
-        } catch (Exception e) {
-            em.getTransaction().rollback();
-            throw new WebApplicationException("Failed to create VXML file: " + e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
-        } finally {
-            em.close();
-        }
+@POST
+public Response createVXMLFile(VXMLFile vxmlFile) {
+    if (vxmlFile.getFileName() == null || vxmlFile.getFilePath() == null) {
+        throw new WebApplicationException("Missing required fields", Response.Status.BAD_REQUEST);
     }
+
+    // Generate random shortCode if not provided
+    if (vxmlFile.getShortCode() == null || vxmlFile.getShortCode().trim().isEmpty()) {
+        String generatedShortCode = String.valueOf((int)(100000 + Math.random() * 900000)); // 6-digit random number
+        vxmlFile.setShortCode(generatedShortCode);
+    }
+
+    EntityManager em = emf.createEntityManager();
+    try {
+        em.getTransaction().begin();
+        em.persist(vxmlFile);
+        em.getTransaction().commit();
+        return Response.status(Response.Status.CREATED).entity(vxmlFile).build();
+    } catch (Exception e) {
+        em.getTransaction().rollback();
+        throw new WebApplicationException("Failed to create VXML file: " + e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+    } finally {
+        em.close();
+    }
+}
+
 
     @PUT
     @Path("/{id}")
