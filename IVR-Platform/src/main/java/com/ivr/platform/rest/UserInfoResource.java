@@ -48,8 +48,7 @@ public class UserInfoResource {
                     VXMLFileInfoDTO vxmlDTO = new VXMLFileInfoDTO(
                             vxmlFile.getVxmlId(),
                             vxmlFile.getFileName(),
-                            vxmlFile.getFilePath(),
-                            vxmlFile.getShortCode()
+                            vxmlFile.getFilePath()
                     );
                     return new ServiceInfoDTO(
                             service.getServiceId(),
@@ -113,8 +112,7 @@ public class UserInfoResource {
                 VXMLFileInfoDTO vxmlDTO = new VXMLFileInfoDTO(
                         vxmlFile.getVxmlId(),
                         vxmlFile.getFileName(),
-                        vxmlFile.getFilePath(),
-                        vxmlFile.getShortCode()
+                        vxmlFile.getFilePath()
                 );
                 return new ServiceInfoDTO(
                         service.getServiceId(),

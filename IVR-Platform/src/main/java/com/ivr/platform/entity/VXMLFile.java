@@ -1,13 +1,11 @@
 package com.ivr.platform.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import javax.persistence.*;
-import java.util.List;
 
 @Entity
-@Table(name = "VXML_files")
+@Table(name = "vxml_files")
 public class VXMLFile {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "vxml_id")
@@ -19,29 +17,47 @@ public class VXMLFile {
     @Column(name = "file_path", nullable = false)
     private String filePath;
 
-    @Column(name = "short_code", nullable = false, unique = true)
-    private String shortCode;
+    @Transient // Not persisted in the database
+    private String content;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "vxmlFile", cascade = CascadeType.ALL)
-    private List<Service> services;
-
+    // Constructors
     public VXMLFile() {}
 
-    public VXMLFile(String fileName, String filePath, String shortCode) {
+    public VXMLFile(String fileName, String filePath) {
         this.fileName = fileName;
         this.filePath = filePath;
-        this.shortCode = shortCode;
     }
 
-    public Integer getVxmlId() { return vxmlId; }
-    public void setVxmlId(Integer vxmlId) { this.vxmlId = vxmlId; }
-    public String getFileName() { return fileName; }
-    public void setFileName(String fileName) { this.fileName = fileName; }
-    public String getFilePath() { return filePath; }
-    public void setFilePath(String filePath) { this.filePath = filePath; }
-    public String getShortCode() { return shortCode; }
-    public void setShortCode(String shortCode) { this.shortCode = shortCode; }
-    public List<Service> getServices() { return services; }
-    public void setServices(List<Service> services) { this.services = services; }
+    // Getters and Setters
+    public Integer getVxmlId() {
+        return vxmlId;
+    }
+
+    public void setVxmlId(Integer vxmlId) {
+        this.vxmlId = vxmlId;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getFilePath() {
+        return filePath;
+    }
+
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
 }
