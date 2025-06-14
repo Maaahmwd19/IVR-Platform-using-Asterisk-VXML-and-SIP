@@ -430,43 +430,47 @@
 
 
         <!-- Modal -->
-        <div id="soundModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden justify-center items-center">
-            <div class="bg-white rounded-xl w-full max-w-2xl p-6 shadow-2xl border border-gray-200">
-                <!-- Header -->
-                <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                        <i class="fa-solid fa-music text-blue-500"></i>
-                        All Sounds
-                    </h2>
-                    <button onclick="closeModal()" class="text-gray-500 hover:text-red-500 text-2xl font-bold">&times;</button>
-                </div>
+<!-- Modal -->
+<div id="soundModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden justify-center items-center">
+  <div class="bg-white rounded-xl w-full max-w-2xl p-6 shadow-2xl border border-gray-200">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-4 border-b pb-2">
+      <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+        <i class="fa-solid fa-music text-blue-500"></i>
+        All Sounds
+      </h2>
+      <button onclick="closeModal()" class="text-gray-500 hover:text-red-500 text-2xl font-bold">&times;</button>
+    </div>
 
-                <!-- Body -->
-                <div class="max-h-96 overflow-y-auto">
-                    <table class="w-full text-sm text-left text-gray-700 border">
-                        <thead class="bg-gray-100 sticky top-0 border-b">
-                            <tr>
-                                <th class="py-2 px-3">#</th>
-                                <th class="py-2 px-3">Sound Name</th>
-                                <th class="py-2 px-3">Copy</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <% for (Sound s : allSounds) {%>
-                            <tr class="border-b hover:bg-gray-50 transition">
-                                <td class="py-2 px-3"><%= s.getId()%></td>
-                                <td class="py-2 px-3" id="name-<%= s.getId()%>"><%= s.getName()%></td>
-                                <td class="py-2 px-3">
-                                    <button onclick="copySoundName('<%= s.getName()%>')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">Copy</button>
+    <!-- Body -->
+    <div class="max-h-96 overflow-y-auto">
+      <table class="w-full text-sm text-left text-gray-700 border">
+        <thead class="bg-gray-100 sticky top-0 border-b">
+          <tr>
+            <th class="py-2 px-3">#</th>
+            <th class="py-2 px-3">Sound Name</th>
+            <th class="py-2 px-3">Copy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% for (Sound s : allSounds) { %>
+          <tr class="border-b hover:bg-gray-50 transition">
+            <td class="py-2 px-3"><%= s.getId() %></td>
+            <td class="py-2 px-3" id="name-<%= s.getId() %>"><%= s.getName() %></td>
+            <td class="py-2 px-3">
+              <button onclick="copySoundName('<%= s.getName() %>')" class="flex items-center gap-1 bg-green-100 hover:bg-green-200 text-green-800 font-medium px-3 py-1 rounded text-xs border border-green-400">
+                <i class="fa-solid fa-copy"></i> Copy
+              </button>
 
-                                </td>
-                            </tr>
-                            <% }%>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+            </td>
+          </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 
 
 
@@ -905,8 +909,8 @@
 
             function copySoundName(name) {
                 navigator.clipboard.writeText(name).then(function () {
-                    closeModal(); // يغلق المودال بعد النسخ
-                    showCopiedToast(name);
+closeModal();
+showCopiedToast(name);
                 }, function (err) {
                     alert('An error occurred while copying');
                 });
