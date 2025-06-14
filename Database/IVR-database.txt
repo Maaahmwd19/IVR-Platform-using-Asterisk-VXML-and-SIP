@@ -1,77 +1,166 @@
--- Create the IVR database
+-- Creating the database
 CREATE DATABASE ivr;
 
--- Connect to the database
+-- Connecting to the database
 \c ivr
 
--- Create users table
+-- Creating tables and sequences
+CREATE SEQUENCE users_user_id_seq;
 CREATE TABLE users (
-    user_id SERIAL PRIMARY KEY,
-    userName VARCHAR(100) NOT NULL,
-    MSISDN VARCHAR(15) NOT NULL UNIQUE,
-    balance DECIMAL(10,2) DEFAULT 0.00
+    user_id INTEGER PRIMARY KEY DEFAULT nextval('users_user_id_seq'),
+    username VARCHAR(100) NOT NULL,
+    msisdn VARCHAR(15) NOT NULL,
+    balance NUMERIC(10,2) NOT NULL
 );
 
--- Create VXML_files table
-CREATE TABLE VXML_files (
-    vxml_id SERIAL PRIMARY KEY,
+CREATE SEQUENCE vxml_files_vxml_id_seq;
+CREATE TABLE vxml_files (
+    vxml_id INTEGER PRIMARY KEY DEFAULT nextval('vxml_files_vxml_id_seq'),
     file_name VARCHAR(100) NOT NULL,
-    file_path VARCHAR(255) NOT NULL,
-    short_code VARCHAR(10) NOT NULL UNIQUE
+    file_path VARCHAR(255) NOT NULL
 );
 
--- Create Service table
+CREATE SEQUENCE service_service_id_seq;
 CREATE TABLE service (
-    service_id SERIAL PRIMARY KEY,
+    service_id INTEGER PRIMARY KEY DEFAULT nextval('service_service_id_seq'),
     service_name VARCHAR(100) NOT NULL,
     service_type VARCHAR(50) NOT NULL,
     quota INTEGER,
-    service_fees DECIMAL(10,2) NOT NULL,
+    service_fees NUMERIC(10,2) NOT NULL,
     vxml_id INTEGER NOT NULL,
-    FOREIGN KEY (vxml_id) REFERENCES VXML_files(vxml_id) ON DELETE RESTRICT
+    CONSTRAINT service_vxml_id_fkey FOREIGN KEY (vxml_id) REFERENCES vxml_files(vxml_id) ON DELETE RESTRICT
 );
 
--- Create user_service table (junction table with composite primary key)
 CREATE TABLE user_service (
     user_id INTEGER NOT NULL,
     service_id INTEGER NOT NULL,
-    activation_status VARCHAR(8) NOT NULL CHECK (activation_status IN ('Active', 'InActive')),
-    PRIMARY KEY (user_id, service_id),
-    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (service_id) REFERENCES service(service_id) ON DELETE CASCADE
+    activation_status VARCHAR(8) NOT NULL,
+    CONSTRAINT user_service_pkey PRIMARY KEY (user_id, service_id),
+    CONSTRAINT user_service_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT user_service_service_id_fkey FOREIGN KEY (service_id) REFERENCES service(service_id) ON DELETE CASCADE,
+    CONSTRAINT user_service_activation_status_check CHECK (activation_status IN ('Active', 'InActive'))
 );
 
--- this data for test on website after this will delete all 
+CREATE SEQUENCE sound_files_sound_id_seq;
+CREATE TABLE sound_files (
+    sound_id INTEGER PRIMARY KEY DEFAULT nextval('sound_files_sound_id_seq'),
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    sound_vxml_name VARCHAR(255) NOT NULL,
+    CONSTRAINT sound_files_sound_vxml_name_key UNIQUE (sound_vxml_name)
+);
 
--- Insert data into users table
-INSERT INTO users (userName, MSISDN, balance) VALUES
-('John Doe', '1234567890', 50.00),
-('Jane Smith', '9876543210', 25.50),
-('Alice Johnson', '5551234567', 100.00),
-('Bob Wilson', '4449876543', 10.75);
+-- Inserting data into users
+INSERT INTO users (user_id, username, msisdn, balance) VALUES
+(1, 'mahmoud', '201000000001', 50.00),
+(2, 'sara', '201000000002', 30.00),
+(3, 'ali', '201000000003', 20.50),
+(4, 'noor', '201000000004', 75.00),
+(5, 'tarek', '201000000005', 10.00);
 
--- Insert data into VXML_files table
-INSERT INTO VXML_files (file_name, file_path, short_code) VALUES
-('welcome.vxml', '/vxml/welcome.vxml', '1001'),
-('menu.vxml', '/vxml/menu.vxml', '1002'),
-('billing.vxml', '/vxml/billing.vxml', '1003'),
-('support.vxml', '/vxml/support.vxml', '1004');
+-- Inserting data into vxml_files
+INSERT INTO vxml_files (vxml_id, file_name, file_path) VALUES
+(1, 'Balance_ar.vxml', '/var/lib/asterisk/vxml/Balance_ar.vxml'),
+(2, 'Balance_en.vxml', '/var/lib/asterisk/vxml/Balance_en.vxml'),
+(3, 'menu.vxml', '/var/lib/asterisk/vxml/menu.vxml'),
+(4, 'Services_ar.vxml', '/var/lib/asterisk/vxml/Services_ar.vxml'),
+(5, 'Services_en.vxml', '/var/lib/asterisk/vxml/Services_en.vxml'),
+(10, 'asa.vxml', '/var/lib/asterisk/vxml/asa.vxml'),
+(11, 'asddasd.vxml', '/var/lib/asterisk/vxml/asddasd.vxml');
 
--- Insert data into service table
-INSERT INTO service (service_name, service_type, quota, service_fees, vxml_id) VALUES
-('Basic IVR', 'Voice', 100, 5.00, 1),
-('Premium IVR', 'Voice', 500, 15.00, 2),
-('Billing Service', 'Interactive', 200, 8.50, 3),
-('Support Service', 'Interactive', 300, 10.00, 4);
+-- Inserting data into service
+INSERT INTO service (service_id, service_name, service_type, quota, service_fees, vxml_id) VALUES
+(1, 'Basic IVR', 'Voice', 100, 5.00, 1),
+(2, 'Premium IVR', 'Voice', 500, 15.00, 2),
+(3, 'Billing Service', 'Interactive', 200, 8.50, 3),
+(4, 'Support Service', 'Interactive', 300, 10.00, 4);
 
--- Insert data into user_service table
+-- Inserting data into user_service
 INSERT INTO user_service (user_id, service_id, activation_status) VALUES
 (1, 1, 'Active'),
-(1, 3, 'InActive'),
+(1, 3, 'Active'),
 (2, 2, 'Active'),
-(3, 1, 'Active'),
-(3, 4, 'Active'),
-(4, 3, 'InActive');
+(3, 1, 'InActive'),
+(4, 4, 'InActive'),
+(5, 1, 'InActive'),
+(5, 2, 'InActive');
 
-
-
+-- Inserting data into sound_files
+INSERT INTO sound_files (sound_id, file_name, file_path, sound_vxml_name) VALUES
+(1, '0_ar.gsm', '/var/lib/asterisk/sounds/ivr/0_ar.gsm', '0 ar'),
+(2, '0_en.gsm', '/var/lib/asterisk/sounds/ivr/0_en.gsm', '0 en'),
+(3, '1_ar.gsm', '/var/lib/asterisk/sounds/ivr/1_ar.gsm', '1 ar'),
+(4, '1_en.gsm', '/var/lib/asterisk/sounds/ivr/1_en.gsm', '1 en'),
+(5, '20_ar.gsm', '/var/lib/asterisk/sounds/ivr/20_ar.gsm', '20 ar'),
+(6, '20_en.gsm', '/var/lib/asterisk/sounds/ivr/20_en.gsm', '20 en'),
+(7, '2_ar.gsm', '/var/lib/asterisk/sounds/ivr/2_ar.gsm', '2 ar'),
+(8, '2_en.gsm', '/var/lib/asterisk/sounds/ivr/2_en.gsm', '2 en'),
+(9, '3_a.gsm', '/var/lib/asterisk/sounds/ivr/3_a.gsm', '3 a'),
+(10, '3_en.gsm', '/var/lib/asterisk/sounds/ivr/3_en.gsm', '3 en'),
+(11, '4_ar.gsm', '/var/lib/asterisk/sounds/ivr/4_ar.gsm', '4 ar'),
+(12, '4_en.gsm', '/var/lib/asterisk/sounds/ivr/4_en.gsm', '4 en'),
+(13, '5_ar.gsm', '/var/lib/asterisk/sounds/ivr/5_ar.gsm', '5 ar'),
+(14, '5_en.gsm', '/var/lib/asterisk/sounds/ivr/5_en.gsm', '5 en'),
+(15, '6_ar.gsm', '/var/lib/asterisk/sounds/ivr/6_ar.gsm', '6 ar'),
+(16, '6_en.gsm', '/var/lib/asterisk/sounds/ivr/6_en.gsm', '6 en'),
+(17, '7_ar.gsm', '/var/lib/asterisk/sounds/ivr/7_ar.gsm', '7 ar'),
+(18, '7_en.gsm', '/var/lib/asterisk/sounds/ivr/7_en.gsm', '7 en'),
+(19, '8_ar.gsm', '/var/lib/asterisk/sounds/ivr/8_ar.gsm', '8 ar'),
+(20, '8_en.gsm', '/var/lib/asterisk/sounds/ivr/8_en.gsm', '8 en'),
+(21, '9_ar.gsm', '/var/lib/asterisk/sounds/ivr/9_ar.gsm', '9 ar'),
+(22, '9_en.gsm', '/var/lib/asterisk/sounds/ivr/9_en.gsm', '9 en'),
+(23, 'balance_en.gsm', '/var/lib/asterisk/sounds/ivr/balance_en.gsm', 'balance en'),
+(24, 'eight_ar(1).gsm', '/var/lib/asterisk/sounds/ivr/eight_ar(1).gsm', 'eight ar1'),
+(25, 'eight_en(1).gsm', '/var/lib/asterisk/sounds/ivr/eight_en(1).gsm', 'eight en1'),
+(26, 'eighty_ar.gsm', '/var/lib/asterisk/sounds/ivr/eighty_ar.gsm', 'eighty ar'),
+(27, 'eighty_en.gsm', '/var/lib/asterisk/sounds/ivr/eighty_en.gsm', 'eighty en'),
+(28, 'enter_your_phone_ar_try_1(1).gsm', '/var/lib/asterisk/sounds/ivr/enter_your_phone_ar_try_1(1).gsm', 'enter your phone ar try 11'),
+(29, 'enter_your_phone_ar_try_1.gsm', '/var/lib/asterisk/sounds/ivr/enter_your_phone_ar_try_1.gsm', 'enter your phone ar try 1'),
+(30, 'enter_your_phone_number.gsm', '/var/lib/asterisk/sounds/ivr/enter_your_phone_number.gsm', 'enter your phone number'),
+(31, 'fifthy_ar(1).gsm', '/var/lib/asterisk/sounds/ivr/fifthy_ar(1).gsm', 'fifthy ar1'),
+(32, 'fifthy_ar.gsm', '/var/lib/asterisk/sounds/ivr/fifthy_ar.gsm', 'fifthy ar'),
+(33, 'fifty_en(1).gsm', '/var/lib/asterisk/sounds/ivr/fifty_en(1).gsm', 'fifty en1'),
+(34, 'fifty_en.gsm', '/var/lib/asterisk/sounds/ivr/fifty_en.gsm', 'fifty en'),
+(35, 'five_ar(1).gsm', '/var/lib/asterisk/sounds/ivr/five_ar(1).gsm', 'five ar1'),
+(36, 'five_en(1).gsm', '/var/lib/asterisk/sounds/ivr/five_en(1).gsm', 'five en1'),
+(37, 'five_en.gsm', '/var/lib/asterisk/sounds/ivr/five_en.gsm', 'five en'),
+(38, 'forty_en(1).gsm', '/var/lib/asterisk/sounds/ivr/forty_en(1).gsm', 'forty en1'),
+(39, 'forty_en.gsm', '/var/lib/asterisk/sounds/ivr/forty_en.gsm', 'forty en'),
+(40, 'four_ar(1).gsm', '/var/lib/asterisk/sounds/ivr/four_ar(1).gsm', 'four ar1'),
+(41, 'four_en(1).gsm', '/var/lib/asterisk/sounds/ivr/four_en(1).gsm', 'four en1'),
+(42, 'fourty_ar.gsm', '/var/lib/asterisk/sounds/ivr/fourty_ar.gsm', 'fourty ar'),
+(43, 'incorrect_number_ar(1).gsm', '/var/lib/asterisk/sounds/ivr/incorrect_number_ar(1).gsm', 'incorrect number ar1'),
+(44, 'incorrect_number_ar.gsm', '/var/lib/asterisk/sounds/ivr/incorrect_number_ar.gsm', 'incorrect number ar'),
+(45, 'incorrect_number_en_try_2.gsm', '/var/lib/asterisk/sounds/ivr/incorrect_number_en_try_2.gsm', 'incorrect number en try 2'),
+(46, 'long_welcome_try_1.gsm', '/var/lib/asterisk/sounds/ivr/long_welcome_try_1.gsm', 'long welcome try 1'),
+(47, 'long_welcome_try_2.gsm', '/var/lib/asterisk/sounds/ivr/long_welcome_try_2.gsm', 'long welcome try 2'),
+(48, 'ninety_ar.gsm', '/var/lib/asterisk/sounds/ivr/ninety_ar.gsm', 'ninety ar'),
+(49, 'ninety_en.gsm', '/var/lib/asterisk/sounds/ivr/ninety_en.gsm', 'ninety en'),
+(50, 'one_hundred_ar.gsm', '/var/lib/asterisk/sounds/ivr/one_hundred_ar.gsm', 'one hundred ar'),
+(51, 'one_hundred_en.gsm', '/var/lib/asterisk/sounds/ivr/one_hundred_en.gsm', 'one hundred en'),
+(52, 'pound_ar.gsm', '/var/lib/asterisk/sounds/ivr/pound_ar.gsm', 'pound ar'),
+(53, 'pound_en_try_2.gsm', '/var/lib/asterisk/sounds/ivr/pound_en_try_2.gsm', 'pound en try 2'),
+(54, 'services_ar.gsm', '/var/lib/asterisk/sounds/ivr/services_ar.gsm', 'services ar'),
+(55, 'services_provided_en.gsm', '/var/lib/asterisk/sounds/ivr/services_provided_en.gsm', 'services provided en'),
+(56, 'seventy_ar.gsm', '/var/lib/asterisk/sounds/ivr/seventy_ar.gsm', 'seventy ar'),
+(57, 'seventy_en.gsm', '/var/lib/asterisk/sounds/ivr/seventy_en.gsm', 'seventy en'),
+(58, 'sixty_ar.gsm', '/var/lib/asterisk/sounds/ivr/sixty_ar.gsm', 'sixty ar'),
+(59, 'sixty_en.gsm', '/var/lib/asterisk/sounds/ivr/sixty_en.gsm', 'sixty en'),
+(60, 'sixty_en_try_2.gsm', '/var/lib/asterisk/sounds/ivr/sixty_en_try_2.gsm', 'sixty en try 2'),
+(61, 'tesr.gsm', '/var/lib/asterisk/sounds/ivr/tesr.gsm', 'tesr'),
+(62, 'thank_you_ar.gsm', '/var/lib/asterisk/sounds/ivr/thank_you_ar.gsm', 'thank you ar'),
+(63, 'thank_you_en.gsm', '/var/lib/asterisk/sounds/ivr/thank_you_en.gsm', 'thank you en'),
+(64, 'thirthy_ar.gsm', '/var/lib/asterisk/sounds/ivr/thirthy_ar.gsm', 'thirthy ar'),
+(65, 'thirthy_en.gsm', '/var/lib/asterisk/sounds/ivr/thirthy_en.gsm', 'thirthy en'),
+(66, 'two_ar_try_2.gsm', '/var/lib/asterisk/sounds/ivr/two_ar_try_2.gsm', 'two ar try 2'),
+(67, 'welcom-ar.gsm', '/var/lib/asterisk/sounds/ivr/welcom-ar.gsm', 'welcom ar'),
+(68, 'wrong_number_ar.gsm', '/var/lib/asterisk/sounds/ivr/wrong_number_ar.gsm', 'wrong number ar'),
+(69, 'your_balance_ar.gsm', '/var/lib/asterisk/sounds/ivr/your_balance_ar.gsm', 'your balance ar'),
+(70, 'your_number_en.gsm', '/var/lib/asterisk/sounds/ivr/your_number_en.gsm', 'your number en'),
+(71, 'your_phone_ar_try_1.gsm', '/var/lib/asterisk/sounds/ivr/your_phone_ar_try_1.gsm', 'your phone ar try 1'),
+(72, 'your_service_ar.gsm', '/var/lib/asterisk/sounds/ivr/your_service_ar.gsm', 'your service ar'),
+(73, 'your_service_en.gsm', '/var/lib/asterisk/sounds/ivr/your_service_en.gsm', 'your service en'),
+(74, 'basic_ivr.gsm', '/var/lib/asterisk/sounds/ivr/basic_ivr.gsm', 'basic ivr'),
+(75, 'support_service.gsm', '/var/lib/asterisk/sounds/ivr/support_service.gsm', 'support service'),
+(76, 'premium_ivr.gsm', '/var/lib/asterisk/sounds/ivr/premium_ivr.gsm', 'premium ivr'),
+(77, 'four_ar.gsm', '/var/lib/asterisk/sounds/ivr/four_ar.gsm', 'four ar');
