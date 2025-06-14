@@ -1,0 +1,9 @@
+to change premisions
+
+sudo chmod -R 777 /var/lib/asterisk/sounds/ivr
+
+to run file : python3 generate_tts.py
+
+
+
+

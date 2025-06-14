@@ -33,8 +33,7 @@ public class UserServicesFetcher {
                     JSONArray services = user.getJSONArray("services");
                     for (int j = 0; j < services.length(); j++) {
                         JSONObject service = services.getJSONObject(j);
-                        if ("Active".equalsIgnoreCase(service.getString("activationStatus")) &&
-                            "Basic IVR".equalsIgnoreCase(service.getString("serviceName"))) {
+                        if ("Active".equalsIgnoreCase(service.getString("activationStatus"))) {
                             activeServices.add(service.getString("serviceName"));
                         }
                     }
@@ -49,16 +48,15 @@ public class UserServicesFetcher {
         return activeServices.isEmpty() ? "no" : String.join(" ", activeServices);
     }
 
-	public static void speakActiveServices(AgiChannel channel, String msisdn) throws Exception {
-	    String services = fetchActiveServices(msisdn);
-	    if ("no".equalsIgnoreCase(services)) {
-		System.out.println("Festival will say: No active services");
-		channel.exec("Festival", "\"No active services\"");
-	    } else {
-		System.out.println("Festival will say: " + services);
-		channel.exec("Festival", "\"" + services + "\"");
-	    }
-	}
-
+    public static void speakActiveServices(AgiChannel channel, String msisdn) throws Exception {
+        String services = fetchActiveServices(msisdn);
+        if ("no".equalsIgnoreCase(services)) {
+            System.out.println("Festival will say: No active services");
+            channel.exec("Festival", "\"No active services\"");
+        } else {
+            System.out.println("Festival will say: " + services);
+            channel.exec("Festival", "\"" + services + "\"");
+        }
+    }
 }
 

@@ -58,15 +58,13 @@ public class VXMLInterpreter {
             System.out.println("Input for " + fieldName + ": " + userInput);
             variables.put(fieldName, userInput);
 
-if ("msisdn".equals(fieldName)) {
-    double balance = BalanceFetcher.fetchBalance(userInput);
-    variables.put("balance", String.format("%.2f", balance));
+            if ("msisdn".equals(fieldName)) {
+                double balance = BalanceFetcher.fetchBalance(userInput);
+                variables.put("balance", String.format("%.2f", balance));
 
-String services = UserServicesFetcher.fetchActiveServices(userInput);
-variables.put("services_list", services);
-
-}
-
+                String services = UserServicesFetcher.fetchActiveServices(userInput);
+                variables.put("services_list", services);
+            }
 
             Element filled = getFirstElementByTagName(field, "filled");
             if (filled != null) {
@@ -186,6 +184,11 @@ variables.put("services_list", services);
 
                     if ("msisdn".equals(varName)) {
                         sayDigits(channel, value);
+	  	  } else if ("services_list".equals(varName)) {
+			   String filename = value.toLowerCase().replaceAll("\\s+", "_").replaceAll("[^a-z0-9_]", "_");
+				System.out.println("🔊 Playing service file: ivr/" + filename);
+				channel.streamFile("ivr/" + filename);
+
                     } else if (value.matches("\\d+(\\.\\d+)?")) {
                         int number = (int) Double.parseDouble(value);
                         String[] parts = numberToAudioParts(number);
@@ -193,8 +196,7 @@ variables.put("services_list", services);
                             channel.exec("SayNumber", part);
                         }
                     } else {
-			channel.exec("Festival", "\"" + value + "\"");
-
+                        channel.exec("Festival", "\"" + value + "\"");
                     }
                 }
             }
