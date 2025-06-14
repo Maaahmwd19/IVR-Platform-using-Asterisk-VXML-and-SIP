@@ -61,9 +61,9 @@
                     <i class="fa-solid fa-code"></i>
                     <span>VXML Editor</span>
                 </a>
-                <a href="../add-services.jsp" class="nav-item">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>Add Services</span>
+                <a href="../sounds/add-sounds.jsp" class="nav-item">
+                    <i class="fa-solid fa-volume-high"></i>
+                    <span>Sounds Management</span>
                 </a>
             </div>
         </nav>
