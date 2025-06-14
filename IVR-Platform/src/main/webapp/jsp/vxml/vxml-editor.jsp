@@ -1,4 +1,138 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ page import="java.util.*" %>
+<%@ page import="java.text.SimpleDateFormat" %>
+<%@ page import="java.io.File" %>
+
+<%!
+// Sound class
+    public class Sound {
+
+        private String id;
+        private String name;
+        private String path;
+        private String size;
+        private String uploadDate;
+
+        public Sound(String id, String name, String path, String size, String uploadDate) {
+            this.id = id;
+            this.name = name;
+            this.path = path;
+            this.size = size;
+            this.uploadDate = uploadDate;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public String getSize() {
+            return size;
+        }
+
+        public String getUploadDate() {
+            return uploadDate;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+
+        public void setSize(String size) {
+            this.size = size;
+        }
+
+        public void setUploadDate(String uploadDate) {
+            this.uploadDate = uploadDate;
+        }
+    }
+
+// Get all sounds from directory
+    public List<Sound> getAllSounds() {
+        List<Sound> sounds = new ArrayList<>();
+        String soundsDir = "/var/lib/asterisk/sounds/ivr";
+        File dir = new File(soundsDir);
+        File[] files = dir.listFiles(( d,                                         name) -> name.toLowerCase().endsWith(".gsm"));
+
+        if (files != null) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            for (int i = 0; i < files.length; i++) {
+                File file = files[i];
+                String id = String.valueOf(i + 1);
+                String name = file.getName().replace(".gsm", "");
+                String path = "/sounds/en/" + file.getName();
+                String size = String.format("%.1f", file.length() / (1024.0 * 1024.0)); // Size in MB
+                String uploadDate = dateFormat.format(new Date(file.lastModified()));
+                sounds.add(new Sound(id, name, path, size, uploadDate));
+            }
+        }
+        return sounds;
+    }
+
+// Calculate total size
+    public double getTotalSize(List<Sound> sounds) {
+        double total = 0;
+        for (Sound sound : sounds) {
+            total += Double.parseDouble(sound.getSize());
+        }
+        return total;
+    }
+%>
+
+<%
+// Initialize data
+    List<Sound> allSounds = getAllSounds();
+
+// Handle pagination
+    int currentPage = 1;
+    String pageParam = request.getParameter("page");
+    if (pageParam != null && !pageParam.isEmpty()) {
+        try {
+            currentPage = Integer.parseInt(pageParam);
+        } catch (NumberFormatException e) {
+            currentPage = 1;
+        }
+    }
+
+    int itemsPerPage = 16; // 4 columns * 4 rows
+    int totalPages = (allSounds.size() > 0) ? (int) Math.ceil((double) allSounds.size() / itemsPerPage) : 0;
+    int startIndex = (currentPage - 1) * itemsPerPage;
+    int endIndex = Math.min(startIndex + itemsPerPage, allSounds.size());
+
+    List<Sound> currentSounds = allSounds.isEmpty() ? new ArrayList<>() : allSounds.subList(startIndex, endIndex);
+
+// Handle file upload
+    String uploadMessage = "";
+    if ("POST".equals(request.getMethod()) && request.getParameter("upload") != null) {
+        uploadMessage = "Files uploaded successfully! (Demo mode)";
+    }
+
+// Handle delete
+    if ("POST".equals(request.getMethod()) && request.getParameter("delete") != null) {
+        String deleteId = request.getParameter("deleteId");
+        // In real implementation, you would delete from the filesystem
+        uploadMessage = "Sound file deleted successfully! (Demo mode)";
+    }
+
+    double totalSize = getTotalSize(allSounds);
+%>
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -51,6 +185,16 @@
                                         <span class="text-sm text-gray-500 self-end mb-2">.vxml</span>
                                     </div>
                                 </div>
+
+                                <div class="w-48">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Show All Sounds</label>
+                                    <button onclick="openModal()" class="flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                                        <i class="fa-solid fa-music"></i>
+                                        <span>Show All Sounds</span>
+                                    </button>
+                                </div>
+
+
                                 <div class="w-48">
                                     <label for="fileUpload" class="block text-sm font-medium text-gray-700 mb-1">Upload VXML</label>
                                     <label for="fileUpload" class="flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer">
@@ -283,17 +427,60 @@
             <div class="validation-popup-content" id="validationContent"></div>
         </div>
 
+
+
+        <!-- Modal -->
+        <div id="soundModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden justify-center items-center">
+            <div class="bg-white rounded-xl w-full max-w-2xl p-6 shadow-2xl border border-gray-200">
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <h2 class="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fa-solid fa-music text-blue-500"></i>
+                        All Sounds
+                    </h2>
+                    <button onclick="closeModal()" class="text-gray-500 hover:text-red-500 text-2xl font-bold">&times;</button>
+                </div>
+
+                <!-- Body -->
+                <div class="max-h-96 overflow-y-auto">
+                    <table class="w-full text-sm text-left text-gray-700 border">
+                        <thead class="bg-gray-100 sticky top-0 border-b">
+                            <tr>
+                                <th class="py-2 px-3">#</th>
+                                <th class="py-2 px-3">Sound Name</th>
+                                <th class="py-2 px-3">Copy</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% for (Sound s : allSounds) {%>
+                            <tr class="border-b hover:bg-gray-50 transition">
+                                <td class="py-2 px-3"><%= s.getId()%></td>
+                                <td class="py-2 px-3" id="name-<%= s.getId()%>"><%= s.getName()%></td>
+                                <td class="py-2 px-3">
+                                    <button onclick="copySoundName('<%= s.getName()%>')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">Copy</button>
+
+                                </td>
+                            </tr>
+                            <% }%>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+
         <script>
             let soundVXMLnames = [];
 
             fetch('http://localhost:8080/IVR-Platform/api/soundfiles')
-                .then(response => response.json())
-                .then(data => {
-                    soundVXMLnames = data.map(item => item.soundVXMLname);
-                })
-                .catch(err => {
-                    console.error('Failed to fetch soundVXMLnames:', err);
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        soundVXMLnames = data.map(item => item.soundVXMLname);
+                    })
+                    .catch(err => {
+                        console.error('Failed to fetch soundVXMLnames:', err);
+                    });
 
             // Editor Configuration with Tag Autocomplete
             const editor = CodeMirror.fromTextArea(document.getElementById('vxmlEditor'), {
@@ -334,7 +521,7 @@
             editor.on('inputRead', function (cm, change) {
                 const cursor = cm.getCursor();
                 const token = cm.getTokenAt(cursor);
-                
+
                 // Trigger autocomplete for tags when typing '<' or tag names
                 if (change.text[0] === '<' || (token.type === 'tag' && /[\w]/.test(change.text[0]))) {
                     console.log('Triggering tag autocomplete:', change.text[0], token); // Debug
@@ -706,7 +893,38 @@
 
 
 
+            function openModal() {
+                document.getElementById("soundModal").classList.remove("hidden");
+                document.getElementById("soundModal").classList.add("flex");
+            }
+
+            function closeModal() {
+                document.getElementById("soundModal").classList.add("hidden");
+                document.getElementById("soundModal").classList.remove("flex");
+            }
+
+            function copySoundName(name) {
+                navigator.clipboard.writeText(name).then(function () {
+                    closeModal(); // يغلق المودال بعد النسخ
+                    showCopiedToast(name);
+                }, function (err) {
+                    alert('An error occurred while copying');
+                });
+            }
+
+
+            function showCopiedToast(name) {
+                const toast = document.createElement('div');
+                toast.textContent = `Copied: ` + name;
+                toast.className = 'fixed top-5 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded shadow z-50 animate-bounce';
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    toast.remove();
+                }, 2000);
+            }
 
         </script>
+
+
     </body>
 </html> 

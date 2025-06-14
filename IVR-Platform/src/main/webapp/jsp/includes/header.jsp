@@ -33,7 +33,10 @@ if (pageName.contains("user-management")) {
 } else if (pageName.contains("vxml-editor")) {
     title = "VXML Editor";
     description = "Edit and manage your VXML files";
-} else if (pageName.contains("add-services")) {
+} else if (pageName.contains("add-sounds")) {
+    title = "Sounds Management";
+    description = "Configure your platform Sounds";
+}else if (pageName.contains("add-services")) {
     title = "Add Services";
     description = "Add new services to your platform";
 } else if (pageName.contains("user-profile")) {
@@ -43,6 +46,7 @@ if (pageName.contains("user-management")) {
     title = "Settings";
     description = "Configure your platform settings";
 }
+
 %>
 
 <!DOCTYPE html>
@@ -68,13 +72,7 @@ if (pageName.contains("user-management")) {
             </div>
         </div>
         <div class="flex items-center gap-2">
-            <div class="relative">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.3-4.3"></path>
-                </svg>
-                <input type="search" placeholder="Search..." class="w-[200px] rounded-md border border-gray-300 pl-8 py-1.5 md:w-[260px]">
-            </div>
+
             <!-- Profile Dropdown -->
             <div class="relative">
                 <button onclick="toggleProfileMenu()" class="flex h-9 items-center gap-2 rounded-md border border-gray-300 px-3 hover:bg-gray-50">
