@@ -6,7 +6,7 @@ public class IVRScript implements AgiScript {
     public void service(AgiRequest request, AgiChannel channel) {
         try {
             channel.answer();
-            String basePath = "VXML/";
+            String basePath = "/var/lib/asterisk/vxml/";
             String currentFile = basePath + "menu.vxml";
             String currentForm = null;
 

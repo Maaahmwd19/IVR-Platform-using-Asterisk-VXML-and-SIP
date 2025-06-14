@@ -9,6 +9,7 @@
         <class>com.ivr.platform.entity.Service</class>
         <class>com.ivr.platform.entity.UserService</class>
         <class>com.ivr.platform.entity.UserServiceId</class>
+        <class>com.ivr.platform.entity.SoundFile</class>
         <properties>
             <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://localhost:5432/ivr"/>
             <property name="javax.persistence.jdbc.user" value="postgres"/>
