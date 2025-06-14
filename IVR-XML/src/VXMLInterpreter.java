@@ -193,7 +193,8 @@ variables.put("services_list", services);
                             channel.exec("SayNumber", part);
                         }
                     } else {
-                        channel.exec("SayAlpha", value);
+			channel.exec("Festival", "\"" + value + "\"");
+
                     }
                 }
             }
