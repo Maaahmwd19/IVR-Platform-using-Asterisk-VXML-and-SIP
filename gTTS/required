@@ -1,9 +1,13 @@
-to change premisions
+IVR-Route-Graduation-Project-ITI-Intake-45
+------------------------------------------------------
 
-sudo chmod -R 777 /var/lib/asterisk/sounds/ivr
+1-move generate_tts.py  to  ---> /var/lib/asterisk/ 
+2-change premisions for /var/lib/asterisk/
+	sudo chmod -R 777 /var/lib/asterisk/
+  
+3-change premisions for generate_tts.py 
+	chmod +x  generate_tts.py
 
-to run file : python3 generate_tts.py
-
-
-
+4-check premisions /var/lib/asterisk/sounds/ivr  if not 777  change the premisions
+	sudo chmod -R 777 /var/lib/asterisk/sounds/ivr
 

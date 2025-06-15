@@ -50,6 +50,12 @@
         </dependency>
         <!-- Java EE Web API -->
         <dependency>
+            <groupId>tech.deepdreams</groupId>
+            <artifactId>worker-lambda</artifactId>
+            <version>0.0.16-RELEASE</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
             <groupId>javax</groupId>
             <artifactId>javaee-web-api</artifactId>
             <version>8.0</version>

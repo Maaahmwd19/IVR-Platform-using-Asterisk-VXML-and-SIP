@@ -45,7 +45,7 @@
                     <i class="fa-solid fa-gauge-high"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="../users/user-management.jsp" class="nav-item">
+                <a href="../users/list.jsp" class="nav-item">
                     <i class="fa-solid fa-users"></i>
                     <span>User Management</span>
                 </a>

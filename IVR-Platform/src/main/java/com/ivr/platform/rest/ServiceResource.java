@@ -16,6 +16,45 @@ import java.util.List;
 public class ServiceResource {
     private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("IVRPersistenceUnit");
 
+    // Helper method to execute the Python script for sound generation
+private void generateSoundScript(String serviceName) {
+    try {
+        ProcessBuilder pb = new ProcessBuilder(
+            "/usr/bin/python3", // Use absolute path for python3
+            "/var/lib/asterisk/generate_tts.py",
+            serviceName
+        );
+        pb.redirectErrorStream(true);
+        System.out.println("Executing command: " + String.join(" ", pb.command()));
+        Process process = pb.start();
+        
+        // Capture output for debugging
+        java.io.BufferedReader reader = new java.io.BufferedReader(
+            new java.io.InputStreamReader(process.getInputStream())
+        );
+        StringBuilder output = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            output.append(line).append("\n");
+            System.out.println("Python script output: " + line);
+        }
+        
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            System.err.println("Python script failed for service: " + serviceName + " with exit code: " + exitCode);
+            System.err.println("Python script output: " + output.toString());
+        } else {
+            System.out.println("Python script executed successfully for service: " + serviceName);
+        }
+    } catch (Exception e) {
+        System.err.println("Error executing Python script for service " + serviceName + ": " + e.getMessage());
+        e.printStackTrace();
+    }
+}
+
+
+
+
     @GET
     public List<Service> getAllServices() {
         EntityManager em = emf.createEntityManager();
@@ -65,6 +104,7 @@ public class ServiceResource {
             service.setVxmlFile(vxmlFile);
             em.persist(service);
             em.getTransaction().commit();
+            generateSoundScript(service.getServiceName()); // Generate sound for new service
             return Response.status(Response.Status.CREATED).entity(service).build();
         } catch (Exception e) {
             em.getTransaction().rollback();
@@ -92,6 +132,7 @@ public class ServiceResource {
             if (vxmlFile == null) {
                 throw new WebApplicationException("Invalid VXML file ID", Response.Status.BAD_REQUEST);
             }
+            boolean nameChanged = !service.getServiceName().equals(updatedService.getServiceName());
             service.setServiceName(updatedService.getServiceName());
             service.setServiceType(updatedService.getServiceType());
             service.setQuota(updatedService.getQuota());
@@ -99,6 +140,9 @@ public class ServiceResource {
             service.setVxmlFile(vxmlFile);
             em.merge(service);
             em.getTransaction().commit();
+            if (nameChanged) {
+                generateSoundScript(updatedService.getServiceName()); // Generate sound if name changed
+            }
             return service;
         } catch (Exception e) {
             em.getTransaction().rollback();
