@@ -15,6 +15,8 @@ import java.io.*;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.annotation.PreDestroy;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @Path("/vxmlfiles")
 @Produces(MediaType.APPLICATION_JSON)
@@ -40,6 +42,7 @@ public class VXMLFileResource {
                         .type(MediaType.APPLICATION_JSON)
                         .build();
             }
+            // For getAll, we don't need to load content to avoid large responses if not necessary
             LOGGER.info("Retrieved " + vxmlFiles.size() + " VXML files");
             return Response.ok(vxmlFiles).build();
         } catch (Exception e) {
@@ -71,6 +74,18 @@ public class VXMLFileResource {
                         .type(MediaType.APPLICATION_JSON)
                         .build();
             }
+
+            // Read the content from the file system and set it
+            try {
+                String content = readFileContent(vxmlFile.getFilePath());
+                vxmlFile.setContent(content);
+                LOGGER.info("Content loaded for VXML file with ID: " + id);
+            } catch (IOException e) {
+                LOGGER.warning("Failed to read content for VXML file " + vxmlFile.getFilePath() + ": " + e.getMessage());
+                // Optionally, you might return an error here or just return the metadata without content
+                // For now, we'll proceed and allow 'content' to be null if reading fails
+            }
+
             LOGGER.info("Retrieved VXML file with ID: " + id);
             return Response.ok(vxmlFile).build();
         } catch (Exception e) {
@@ -84,6 +99,61 @@ public class VXMLFileResource {
                 em.close();
             }
         }
+    }
+
+    /**
+     * Retrieves a VXML file content directly from the filesystem.
+     */
+    @GET
+    @Path("/content/{fileName}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getVXMLFileContent(@PathParam("fileName") String fileName) {
+        try {
+            String filePath = VXML_DIR + File.separator + fileName;
+            File file = new File(filePath);
+            
+            if (!file.exists()) {
+                LOGGER.warning("VXML file not found: " + filePath);
+                return Response.status(Response.Status.NOT_FOUND)
+                    .entity("VXML file not found")
+                    .type(MediaType.TEXT_PLAIN)
+                    .build();
+            }
+
+            if (!file.canRead()) {
+                LOGGER.warning("Cannot read VXML file: " + filePath);
+                return Response.status(Response.Status.FORBIDDEN)
+                    .entity("Permission denied: Cannot read file")
+                    .type(MediaType.TEXT_PLAIN)
+                    .build();
+            }
+
+            try {
+                String content = readFileContent(filePath);
+                return Response.ok(content)
+                    .type(MediaType.TEXT_PLAIN)
+                    .build();
+            } catch (IOException e) {
+                LOGGER.severe("Failed to read VXML file content: " + e.getMessage());
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Failed to read file content: " + e.getMessage())
+                    .type(MediaType.TEXT_PLAIN)
+                    .build();
+            }
+        } catch (Exception e) {
+            LOGGER.severe("Error processing VXML file request: " + e.getMessage());
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("Error processing request: " + e.getMessage())
+                .type(MediaType.TEXT_PLAIN)
+                .build();
+        }
+    }
+
+    /**
+     * Helper method to read file content.
+     */
+    private String readFileContent(String filePath) throws IOException {
+        return new String(Files.readAllBytes(Paths.get(filePath)));
     }
 
     /**
@@ -331,7 +401,7 @@ public class VXMLFileResource {
     }
 
     /**
-     * Updates a VXML file’s metadata.
+     * Updates a VXML file's metadata.
      */
     @PUT
     @Path("/{id}")
@@ -348,10 +418,10 @@ public class VXMLFileResource {
                         .type(MediaType.APPLICATION_JSON)
                         .build();
             }
-            if (updatedVXMLFile == null || updatedVXMLFile.getFileName() == null || updatedVXMLFile.getFilePath() == null) {
+            if (updatedVXMLFile == null || updatedVXMLFile.getFileName() == null || updatedVXMLFile.getFilePath() == null || updatedVXMLFile.getContent() == null) {
                 LOGGER.warning("Missing required fields for VXML file update: ID " + id);
                 return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ErrorResponse("Missing required fields: fileName and filePath are required"))
+                        .entity(new ErrorResponse("Missing required fields: fileName, filePath, and content are required"))
                         .type(MediaType.APPLICATION_JSON)
                         .build();
             }
@@ -369,6 +439,41 @@ public class VXMLFileResource {
                         .type(MediaType.APPLICATION_JSON)
                         .build();
             }
+
+            // Write content to file
+            File targetFile = new File(updatedVXMLFile.getFilePath());
+            try {
+                // Ensure the directory exists
+                File parentDir = targetFile.getParentFile();
+                if (!parentDir.exists() && !parentDir.mkdirs()) {
+                    LOGGER.severe("Failed to create directory: " + parentDir.getAbsolutePath());
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                            .entity(new ErrorResponse("Failed to create directory: " + parentDir.getAbsolutePath()))
+                            .type(MediaType.APPLICATION_JSON)
+                            .build();
+                }
+                // Check if directory is writable
+                if (!parentDir.canWrite()) {
+                    LOGGER.severe("Directory is not writable: " + parentDir.getAbsolutePath());
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                            .entity(new ErrorResponse("Directory is not writable: " + parentDir.getAbsolutePath()))
+                            .type(MediaType.APPLICATION_JSON)
+                            .build();
+                }
+                // Write file (allows overwriting)
+                try (FileWriter writer = new FileWriter(targetFile)) {
+                    writer.write(updatedVXMLFile.getContent());
+                    writer.flush();
+                }
+                LOGGER.info("File written successfully: " + targetFile.getAbsolutePath());
+            } catch (IOException e) {
+                LOGGER.severe("Failed to save file: " + targetFile.getAbsolutePath() + ", Error: " + e.getMessage());
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(new ErrorResponse("Failed to save file: " + e.getMessage()))
+                        .type(MediaType.APPLICATION_JSON)
+                        .build();
+            }
+
             vxmlFile.setFileName(updatedVXMLFile.getFileName());
             vxmlFile.setFilePath(updatedVXMLFile.getFilePath());
             em.merge(vxmlFile);

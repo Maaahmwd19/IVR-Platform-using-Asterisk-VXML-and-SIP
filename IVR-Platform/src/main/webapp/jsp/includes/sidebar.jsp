@@ -45,22 +45,19 @@
                     <i class="fa-solid fa-gauge-high"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="../users/list.jsp" class="nav-item">
+                <a href="../users/list-users.jsp" class="nav-item">
                     <i class="fa-solid fa-users"></i>
                     <span>User Management</span>
                 </a>
-                <a href="../service-management.jsp" class="nav-item">
+                <a href="../services/list-services.jsp" class="nav-item">
                     <i class="fa-solid fa-gear"></i>
                     <span>Service Management</span>
                 </a>
-                <a href="../vxml/vxml-management.jsp" class="nav-item">
+                <a href="../vxml/vxml_files.jsp" class="nav-item">
                     <i class="fa-solid fa-file-code"></i>
                     <span>VXML Management</span>
                 </a>
-                <a href="../vxml/vxml-editor.jsp" class="nav-item">
-                    <i class="fa-solid fa-code"></i>
-                    <span>VXML Editor</span>
-                </a>
+
                 <a href="../sounds/add-sounds.jsp" class="nav-item">
                     <i class="fa-solid fa-volume-high"></i>
                     <span>Sounds Management</span>

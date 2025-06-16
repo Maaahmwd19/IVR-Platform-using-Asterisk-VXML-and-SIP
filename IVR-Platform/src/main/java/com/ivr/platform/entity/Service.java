@@ -16,17 +16,17 @@ public class Service {
     @Column(name = "service_name", nullable = false)
     private String serviceName;
 
-    @Column(name = "service_type", nullable = false)
+    @Column(name = "service_type", nullable = true)
     private String serviceType;
 
     @Column(name = "quota")
     private Integer quota;
 
-    @Column(name = "service_fees", nullable = false)
+    @Column(name = "service_fees", nullable = true)
     private BigDecimal serviceFees;
 
     @ManyToOne
-    @JoinColumn(name = "vxml_id", nullable = false)
+    @JoinColumn(name = "vxml_id", nullable = true)
     private VXMLFile vxmlFile;
 
 @JsonIgnore
