@@ -88,31 +88,37 @@ private void generateSoundScript(String serviceName) {
         }
     }
 
+
+    
     @POST
-    public Response createService(Service service) {
-        if (service.getServiceName() == null || service.getServiceType() == null || 
-            service.getServiceFees() == null || service.getVxmlFile() == null) {
-            throw new WebApplicationException("Missing required fields", Response.Status.BAD_REQUEST);
-        }
-        EntityManager em = emf.createEntityManager();
-        try {
-            em.getTransaction().begin();
+public Response createService(Service service) {
+    if (service.getServiceName() == null) {
+        throw new WebApplicationException("Service name is required", Response.Status.BAD_REQUEST);
+    }
+    EntityManager em = emf.createEntityManager();
+    try {
+        em.getTransaction().begin();
+        // If vxmlFile is provided, validate it
+        if (service.getVxmlFile() != null && service.getVxmlFile().getVxmlId() != null) {
             VXMLFile vxmlFile = em.find(VXMLFile.class, service.getVxmlFile().getVxmlId());
             if (vxmlFile == null) {
                 throw new WebApplicationException("Invalid VXML file ID", Response.Status.BAD_REQUEST);
             }
             service.setVxmlFile(vxmlFile);
-            em.persist(service);
-            em.getTransaction().commit();
-            generateSoundScript(service.getServiceName()); // Generate sound for new service
-            return Response.status(Response.Status.CREATED).entity(service).build();
-        } catch (Exception e) {
-            em.getTransaction().rollback();
-            throw new WebApplicationException("Failed to create service: " + e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
-        } finally {
-            em.close();
+        } else {
+            service.setVxmlFile(null); // Explicitly allow null vxmlFile
         }
+        em.persist(service);
+        em.getTransaction().commit();
+        generateSoundScript(service.getServiceName()); // Generate sound for new service
+        return Response.status(Response.Status.CREATED).entity(service).build();
+    } catch (Exception e) {
+        em.getTransaction().rollback();
+        throw new WebApplicationException("Failed to create service: " + e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+    } finally {
+        em.close();
     }
+}
 
     @PUT
     @Path("/{id}")

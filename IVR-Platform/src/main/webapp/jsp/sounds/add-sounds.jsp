@@ -8,7 +8,6 @@
 <%!
 // Sound class
     public class Sound {
-
         private String id;
         private String name;
         private String path;
@@ -23,61 +22,31 @@
             this.uploadDate = uploadDate;
         }
 
-        public String getId() {
-            return id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getPath() {
-            return path;
-        }
-
-        public String getSize() {
-            return size;
-        }
-
-        public String getUploadDate() {
-            return uploadDate;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public void setPath(String path) {
-            this.path = path;
-        }
-
-        public void setSize(String size) {
-            this.size = size;
-        }
-
-        public void setUploadDate(String uploadDate) {
-            this.uploadDate = uploadDate;
-        }
+        public String getId() { return id; }
+        public String getName() { return name; }
+        public String getPath() { return path; }
+        public String getSize() { return size; }
+        public String getUploadDate() { return uploadDate; }
+        public void setId(String id) { this.id = id; }
+        public void setName(String name) { this.name = name; }
+        public void setPath(String path) { this.path = path; }
+        public void setSize(String size) { this.size = size; }
+        public void setUploadDate(String uploadDate) { this.uploadDate = uploadDate; }
     }
 
-// Get all sounds from directory
     public List<Sound> getAllSounds() {
         List<Sound> sounds = new ArrayList<>();
         String soundsDir = "/var/lib/asterisk/sounds/ivr";
         File dir = new File(soundsDir);
-        File[] files = dir.listFiles(( d,                             name) -> name.toLowerCase().endsWith(".gsm"));
+        File[] files = dir.listFiles((d, name) -> name.toLowerCase().endsWith(".gsm"));
 
         if (files != null) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
             for (int i = 0; i < files.length; i++) {
                 File file = files[i];
                 String id = String.valueOf(i + 1);
-                String name = file.getName().replace(".gsm", "");
-                String path = "/sounds/en/" + file.getName();
+                String name = file.getName().replace(".gsm", "").replace("_", " ");
+                String path = "/sounds/ivr/" + file.getName();
                 String size = String.format("%.1f", file.length() / (1024.0 * 1024.0)); // Size in MB
                 String uploadDate = dateFormat.format(new Date(file.lastModified()));
                 sounds.add(new Sound(id, name, path, size, uploadDate));
@@ -86,7 +55,6 @@
         return sounds;
     }
 
-// Calculate total size
     public double getTotalSize(List<Sound> sounds) {
         double total = 0;
         for (Sound sound : sounds) {
@@ -99,24 +67,7 @@
 <%
 // Initialize data
     List<Sound> allSounds = getAllSounds();
-
-// Handle pagination
-    int currentPage = 1;
-    String pageParam = request.getParameter("page");
-    if (pageParam != null && !pageParam.isEmpty()) {
-        try {
-            currentPage = Integer.parseInt(pageParam);
-        } catch (NumberFormatException e) {
-            currentPage = 1;
-        }
-    }
-
-    int itemsPerPage = 16; // 4 columns * 4 rows
-    int totalPages = (allSounds.size() > 0) ? (int) Math.ceil((double) allSounds.size() / itemsPerPage) : 0;
-    int startIndex = (currentPage - 1) * itemsPerPage;
-    int endIndex = Math.min(startIndex + itemsPerPage, allSounds.size());
-
-    List<Sound> currentSounds = allSounds.isEmpty() ? new ArrayList<>() : allSounds.subList(startIndex, endIndex);
+    List<Sound> currentSounds = allSounds; // Show all sounds at once
 
 // Handle file upload
     String uploadMessage = "";
@@ -127,7 +78,6 @@
 // Handle delete
     if ("POST".equals(request.getMethod()) && request.getParameter("delete") != null) {
         String deleteId = request.getParameter("deleteId");
-        // In real implementation, you would delete from the filesystem
         uploadMessage = "Sound file deleted successfully! (Demo mode)";
     }
 
@@ -136,615 +86,506 @@
 
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Sound Library - VoxRoute</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Library - VoxRoute</title>
 
-        <!-- Include Tailwind CSS -->
-        <script src="https://cdn.tailwindcss.com"></script>
-        <!-- Include Font Awesome for icons -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Include Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Include Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-        <!-- Custom styles -->
-        <style>
-            /* Custom gradient backgrounds */
-            .bg-gradient-slate-blue {
-                background: linear-gradient(to bottom right, #f8fafc, #dbeafe);
-            }
+    <!-- Custom styles -->
+    <style>
+        .bg-gradient-slate-blue {
+            background: linear-gradient(to bottom right, #f8fafc, #dbeafe);
+        }
+        .bg-gradient-blue-purple {
+            background: linear-gradient(to right, #3b82f6, #7c3aed);
+        }
+        .bg-gradient-purple-pink {
+            background: linear-gradient(to right, #7c3aed, #ec4899);
+        }
+        .bg-gradient-pink-red {
+            background: linear-gradient(to right, #ec4899, #ef4444);
+        }
+        .bg-gradient-blue-purple-light {
+            background: linear-gradient(to bottom right, #dbeafe, #e9d5ff);
+        }
+        .sound-card {
+            transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .sound-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .sound-card-overlay {
+            background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), rgba(124, 58, 237, 0.05));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .sound-card:hover .sound-card-overlay {
+            opacity: 1;
+        }
+        .btn-play {
+            transition: all 0.2s ease;
+        }
+        .btn-play:hover {
+            background-color: #dbeafe;
+            border-color: #93c5fd;
+            color: #1d4ed8;
+        }
+        .btn-play.playing {
+            background-color: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+        }
+        .btn-download:hover {
+            background-color: #f3e8ff;
+            border-color: #c4b5fd;
+            color: #7c3aed;
+        }
+        .btn-delete:hover {
+            background-color: #fee2e2;
+            border-color: #fca5a5;
+            color: #dc2626;
+        }
+        .upload-area {
+            border: 2px dashed #c4b5fd;
+            background-color: #f3e8ff;
+            color: #7c3aed;
+            transition: all 0.2s ease;
+        }
+        .upload-area:hover {
+            border-color: #a78bfa;
+            background-color: #e9d5ff;
+        }
+        .loading-spinner {
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .tooltip {
+            position: relative;
+        }
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            width: 80px;
+            background-color: #374151;
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -40px;
+            font-size: 12px;
+            transition: opacity 0.3s;
+        }
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #374151 transparent transparent transparent;
+        }
+        @media (max-width: 768px) {
+            .sound-grid { grid-template-columns: repeat(1, 1fr); }
+        }
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .sound-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (min-width: 1025px) and (max-width: 1280px) {
+            .sound-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (min-width: 1281px) {
+            .sound-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        .sound-grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+        .sound-card-content {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .sound-card-header {
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .sound-card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .sound-card-footer {
+            margin-top: 1rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<jsp:include page="/jsp/includes/sidebar.jsp" />
 
-            .bg-gradient-blue-purple {
-                background: linear-gradient(to right, #3b82f6, #7c3aed);
-            }
+<body class="bg-gray-50">
+    
+    <div class="flex min-h-screen">
+        <!-- Sidebar overlay for mobile -->
+        <div class="sidebar-overlay fixed inset-0 bg-black bg-opacity-50 z-10 md:hidden" onclick="toggleSidebar()"></div>
 
-            .bg-gradient-purple-pink {
-                background: linear-gradient(to right, #7c3aed, #ec4899);
-            }
+        <!-- Main content -->
+        <main class="flex-1 overflow-y-auto ml-[280px] h-screen">
+            <div class="container mx-auto p-4 md:p-6">
+                <jsp:include page="/jsp/includes/header.jsp" />
+                <div class="bg-gradient-slate-blue">
+                    <div class="flex-1 flex flex-col">
+                        <!-- Main Content Area -->
+                        <div class="flex-1 p-6">
+                            <div class="mx-auto max-w-7xl">
+                                <!-- Content Header -->
+                                <div class="mb-8">
+                                    <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                                        <div class="w-4/5">
+                                            <input
+                                                type="text"
+                                                id="searchInput"
+                                                onkeyup="filterSounds()"
+                                                placeholder="Search sound name..."
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                            />
+                                        </div>
 
-            .bg-gradient-pink-red {
-                background: linear-gradient(to right, #ec4899, #ef4444);
-            }
-
-            .bg-gradient-blue-purple-light {
-                background: linear-gradient(to bottom right, #dbeafe, #e9d5ff);
-            }
-
-            /* Card hover effects */
-            .sound-card {
-                transition: all 0.3s ease;
-                height: 100%;
-                display: flex;
-                flex-direction: column;
-            }
-
-            .sound-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            }
-
-            .sound-card-overlay {
-                background: linear-gradient(to bottom right, rgba(59, 130, 246, 0.05), rgba(124, 58, 237, 0.05));
-                opacity: 0;
-                transition: opacity 0.3s ease;
-            }
-
-            .sound-card:hover .sound-card-overlay {
-                opacity: 1;
-            }
-
-            /* Button styles */
-            .btn-play {
-                transition: all 0.2s ease;
-            }
-
-            .btn-play:hover {
-                background-color: #dbeafe;
-                border-color: #93c5fd;
-                color: #1d4ed8;
-            }
-
-            .btn-play.playing {
-                background-color: #dcfce7;
-                border-color: #86efac;
-                color: #166534;
-            }
-
-            .btn-download:hover {
-                background-color: #f3e8ff;
-                border-color: #c4b5fd;
-                color: #7c3aed;
-            }
-
-            .btn-delete:hover {
-                background-color: #fee2e2;
-                border-color: #fca5a5;
-                color: #dc2626;
-            }
-
-            /* Upload area styles */
-            .upload-area {
-                border: 2px dashed #c4b5fd;
-                background-color: #f3e8ff;
-                color: #7c3aed;
-                transition: all 0.2s ease;
-            }
-
-            .upload-area:hover {
-                border-color: #a78bfa;
-                background-color: #e9d5ff;
-            }
-
-            /* Loading animation */
-            .loading-spinner {
-                border: 2px solid #ffffff;
-                border-top: 2px solid transparent;
-                border-radius: 50%;
-                width: 16px;
-                height: 16px;
-                animation: spin 1s linear infinite;
-            }
-
-            @keyframes spin {
-                0% {
-                    transform: rotate(0deg);
-                }
-                100% {
-                    transform: rotate(360deg);
-                }
-            }
-
-            /* Tooltip styles */
-            .tooltip {
-                position: relative;
-            }
-
-            .tooltip:hover .tooltip-text {
-                visibility: visible;
-                opacity: 1;
-            }
-
-            .tooltip-text {
-                visibility: hidden;
-                opacity: 0;
-                width: 80px;
-                background-color: #374151;
-                color: white;
-                text-align: center;
-                border-radius: 6px;
-                padding: 5px;
-                position: absolute;
-                z-index: 1;
-                bottom: 125%;
-                left: 50%;
-                margin-left: -40px;
-                font-size: 12px;
-                transition: opacity 0.3s;
-            }
-
-            .tooltip-text::after {
-                content: "";
-                position: absolute;
-                top: 100%;
-                left: 50%;
-                margin-left: -5px;
-                border-width: 5px;
-                border-style: solid;
-                border-color: #374151 transparent transparent transparent;
-            }
-
-            /* Responsive grid */
-            @media (max-width: 768px) {
-                .sound-grid {
-                    grid-template-columns: repeat(1, 1fr);
-                }
-            }
-
-            @media (min-width: 769px) and (max-width: 1024px) {
-                .sound-grid {
-                    grid-template-columns: repeat(2, 1fr);
-                }
-            }
-
-            @media (min-width: 1025px) and (max-width: 1280px) {
-                .sound-grid {
-                    grid-template-columns: repeat(3, 1fr);
-                }
-            }
-
-            @media (min-width: 1281px) {
-                .sound-grid {
-                    grid-template-columns: repeat(4, 1fr);
-                }
-            }
-
-            /* Sound grid layout */
-            .sound-grid {
-                display: grid;
-                gap: 1.5rem;
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            }
-
-            /* Card content layout */
-            .sound-card-content {
-                padding: 1.5rem;
-                display: flex;
-                flex-direction: column;
-                flex: 1;
-            }
-
-            .sound-card-header {
-                margin-bottom: 1rem;
-                text-align: center;
-            }
-
-            .sound-card-body {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-            }
-
-            .sound-card-footer {
-                margin-top: 1rem;
-                text-align: center;
-            }
-        </style>
-    </head>
-    <jsp:include page="/jsp/includes/sidebar.jsp" />
-
-    <body class="bg-gray-50">
-        <div class="flex min-h-screen">
-            <!-- Sidebar overlay for mobile -->
-            <div class="sidebar-overlay fixed inset-0 bg-black bg-opacity-50 z-10 md:hidden" onclick="toggleSidebar()"></div>
-
-            <!-- Main content -->
-            <main class="flex-1 overflow-y-auto ml-[280px] h-screen">
-                <div class="container mx-auto p-4 md:p-6">
-                    <jsp:include page="/jsp/includes/header.jsp" />
-                    <body class="bg-gradient-slate-blue">
-                        <div class="flex-1 flex flex-col">
-                            <!-- Main Content Area -->
-                            <div class="flex-1 p-6">
-                                <div class="mx-auto max-w-7xl">
-                                    <!-- Content Header -->
-                                    <div class="mb-8">
-                                        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                                            <div>
-                                                <h1 class="text-3xl font-bold text-gray-900">Sound Library</h1>
-                                                <p class="text-gray-600">Manage your audio files and sound resources</p>
-                                            </div>
-
-                                            <!-- Upload Section -->
-                                            <div class="flex flex-col gap-4 md:flex-row md:items-center">
-                                                <label for="file-upload" class="upload-area flex cursor-pointer items-center gap-2 rounded-md px-4 py-2">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <!-- Upload Section -->
+                                        <div class="flex flex-col gap-4 md:flex-row md:items-center">
+                                            <label for="file-upload" class="upload-area flex cursor-pointer items-center gap-2 rounded-md px-4 py-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                                     <polyline points="7 10 12 15 17 10"></polyline>
                                                     <line x1="12" y1="15" x2="12" y2="3"></line>
-                                                    </svg>
-                                                    Select GSM Files
-                                                </label>
-                                                <input type="file" id="file-upload" name="files" multiple accept=".gsm" class="hidden" onchange="handleFileSelect(this)">
-                                                <div id="selected-files" class="hidden">
-                                                    <span id="file-count" class="inline-flex items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800"></span>
-                                                    <button type="button" id="upload-btn" class="ml-2 inline-flex items-center rounded-md bg-gradient-to-r from-purple-600 to-blue-600 px-4 py-2 text-sm font-medium text-white hover:from-purple-700 hover:to-blue-700">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-4 w-4">
+                                                </svg>
+                                                Select GSM Files
+                                            </label>
+                                            <input type="file" id="file-upload" name="files" multiple accept=".gsm" class="hidden" onchange="handleFileSelect(this)">
+                                            <div id="selected-files" class="hidden">
+                                                <span id="file-count" class="inline-flex items-center rounded-md bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800"></span>
+                                                <button type="button" id="upload-btn" class="ml-2 inline-flex items-center rounded-md bg-gradient-to-r from-purple-600 to-blue-600 px-4 py-2 text-sm font-medium text-white hover:from-purple-700 hover:to-blue-700">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-4 w-4">
                                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                                         <polyline points="7 10 12 15 17 10"></polyline>
                                                         <line x1="12" y1="15" x2="12" y2="3"></line>
-                                                        </svg>
-                                                        Upload Files
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-
-                                        <!-- Upload Message -->
-                                        <div id="api-upload-message" class="hidden mt-4 rounded-md p-4">
-                                            <div class="flex">
-                                                <svg id="api-upload-icon" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                                                </svg>
-                                                <div class="ml-3">
-                                                    <p id="api-upload-text" class="text-sm font-medium"></p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <!-- Stats -->
-                                        <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-1">
-                                            <div class="bg-gradient-blue-purple rounded-lg p-4 text-white">
-                                                <div class="flex items-center gap-3">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5 3 19 12 5 21 5 3"></polygon>
-                                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                                                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
                                                     </svg>
-                                                    <div>
-                                                        <p class="text-sm opacity-90">Total Sounds</p>
-                                                        <p class="text-2xl font-bold"><%= allSounds.size()%></p>
-                                                    </div>
-                                                </div>
+                                                    Upload Files
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- Sound Cards Grid -->
-                                    <div class="mb-8">
-                                        <div class="sound-grid">
-                                            <% for (Sound sound : currentSounds) {%>
-                                            <div class="sound-card relative overflow-hidden rounded-lg border-0 bg-white shadow-md">
-                                                <div class="sound-card-overlay absolute inset-0"></div>
+                                    <!-- Upload Message -->
+                                    <div id="api-upload-message" class="hidden mt-4 rounded-md p-4">
+                                        <div class="flex">
+                                            <svg id="api-upload-icon" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                            </svg>
+                                            <div class="ml-3">
+                                                <p id="api-upload-text" class="text-sm font-medium"></p>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                                <div class="sound-card-content">
-                                                    <!-- Sound Icon -->
-                                                    <div class="sound-card-header">
-                                                        <div class="bg-gradient-blue-purple-light flex h-16 w-16 items-center justify-center rounded-full mx-auto">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600">
+                                    <!-- Stats -->
+                                    <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-1">
+                                        <div class="bg-gradient-blue-purple rounded-lg p-4 text-white">
+                                            <div class="flex items-center gap-3">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                                                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                                                </svg>
+                                                <div>
+                                                    <p class="text-sm opacity-90">Total Sounds</p>
+                                                    <p class="text-2xl font-bold"><%= allSounds.size()%></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Sound Cards Grid -->
+                                <div class="mb-8">
+                                    <div class="sound-grid">
+                                        <% for (Sound sound : currentSounds) {%>
+                                        <div class="sound-card relative overflow-hidden rounded-lg border-0 bg-white shadow-md">
+                                            <div class="sound-card-overlay absolute inset-0"></div>
+                                            <div class="sound-card-content">
+                                                <!-- Sound Icon -->
+                                                <div class="sound-card-header">
+                                                    <div class="bg-gradient-blue-purple-light flex h-16 w-16 items-center justify-center rounded-full mx-auto">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-600">
                                                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                                                             <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                                                             <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                                                            </svg>
-                                                        </div>
-                                                    </div>
-
-                                                    <!-- Sound Info -->
-                                                    <div class="sound-card-body">
-                                                        <div>
-                                                            <h3 class="mb-2 font-semibold text-gray-900 text-center"><%= sound.getName()%></h3>
-   
-                                                        </div>
-
-                                                        <!-- Action Buttons -->
-                                                        <div class="flex items-center justify-center gap-2 mt-4">
-                                                            <!-- Delete Button -->
-                                                            <div class="tooltip">
-                                                                <form method="post" style="display: inline;">
-                                                                    <input type="hidden" name="delete" value="true">
-                                                                    <input type="hidden" name="deleteId" value="<%= sound.getId()%>">
-                                                                    <button type="submit" onclick="return confirm('Are you sure you want to delete this sound file?')" class="btn-delete h-8 w-8 rounded-md border border-gray-300 bg-white p-0">
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                        <polyline points="3 6 5 6 21 6"></polyline>
-                                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                                        </svg>
-                                                                    </button>
-                                                                </form>
-                                                                <span class="tooltip-text">Delete</span>
-                                                            </div>
-
-                                                            <!-- Copy Name Button -->
-                                                            <div class="tooltip">
-                                                                <%
-                                                                    String soundName = sound.getName();
-                                                                %>
-                                                                <button
-                                                                    type="button"
-                                                                    class="btn-copy h-8 w-8 rounded-md border border-gray-300 bg-white p-0"
-                                                                    onclick="copyNameFromButton(this)"
-                                                                    data-name="<%= soundName.replace("\"", "&quot;")%>">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                                                                    </svg>
-                                                                </button>
-                                                                <span class="tooltip-text">Copy Name</span>
-                                                            </div>
-
-                                                        </div>
-
-                                                    </div>
-
-                                                    <!-- Upload Date -->
-                                                    <div class="sound-card-footer">
-                                                        <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
-                                                            <%= new SimpleDateFormat("MMM dd, yyyy").format(new SimpleDateFormat("yyyy-MM-dd").parse(sound.getUploadDate()))%>
-                                                        </span>
+                                                        </svg>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <% } %>
-                                        </div>
 
-                                        <!-- Empty State -->
-                                        <% if (allSounds.isEmpty()) { %>
-                                        <div class="flex flex-col items-center justify-center py-16">
-                                            <div class="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
+                                                <!-- Sound Info -->
+                                                <div class="sound-card-body">
+                                                    <div>
+                                                        <h3 class="mb-2 font-semibold text-gray-900 text-center"><%= sound.getName()%></h3>
+                                                    </div>
+
+                                                    <!-- Action Buttons -->
+                                                    <div class="flex items-center justify-center gap-2 mt-4">
+                                                        <!-- Delete Button -->
+                                                        <div class="tooltip">
+                                                            <form method="post" style="display: inline;">
+                                                                <input type="hidden" name="delete" value="true">
+                                                                <input type="hidden" name="deleteId" value="<%= sound.getId()%>">
+                                                                <button type="submit" onclick="return confirm('Are you sure you want to delete this sound file?')" class="btn-delete h-8 w-8 rounded-md border border-gray-300 bg-white p-0">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                                    </svg>
+                                                                </button>
+                                                            </form>
+                                                            <span class="tooltip-text">Delete</span>
+                                                        </div>
+
+                                                        <!-- Copy Name Button -->
+                                                        <div class="tooltip">
+                                                            <%
+                                                                String soundName = sound.getName();
+                                                            %>
+                                                            <button
+                                                                type="button"
+                                                                class="btn-copy h-8 w-8 rounded-md border border-gray-300 bg-white p-0"
+                                                                onclick="copyNameFromButton(this)"
+                                                                data-name="<%= soundName.replace("\"", "")%>">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                                                </svg>
+                                                            </button>
+                                                            <span class="tooltip-text">Copy Name</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Upload Date -->
+                                                <div class="sound-card-footer">
+                                                    <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
+                                                        <%= new SimpleDateFormat("MMM dd, yyyy").format(new SimpleDateFormat("yyyy-MM-dd").parse(sound.getUploadDate()))%>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <% } %>
+                                    </div>
+
+                                    <!-- Empty State -->
+                                    <% if (allSounds.isEmpty()) { %>
+                                    <div class="flex flex-col items-center justify-center py-16">
+                                        <div class="mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
                                                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                                                 <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                                                 <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-                                                </svg>
-                                            </div>
-                                            <h3 class="mb-2 text-lg font-semibold text-gray-900">No sounds found</h3>
-                                            <p class="mb-4 text-gray-500">Upload your first GSM audio file to get started</p>
-                                            <label for="file-upload" class="cursor-pointer rounded-md bg-gradient-to-r from-purple-600 to-blue-600 px-4 py-2 text-white hover:from-purple-700 hover:to-blue-700">
-                                                Upload Sounds
-                                            </label>
+                                            </svg>
                                         </div>
-                                        <% } %>
+                                        <h3 class="mb-2 text-lg font-semibold text-gray-900">No sounds found</h3>
+                                        <p class="mb-4 text-gray-500">Upload your first GSM audio file to get started</p>
+                                        <label for="file-upload" class="cursor-pointer rounded-md bg-gradient-to-r from-purple-600 to-blue-600 px-4 py-2 text-white hover:from-purple-700 hover:to-blue-700">
+                                            Upload Sounds
+                                        </label>
                                     </div>
-
-                                    <!-- Pagination -->
-                                    <% if (totalPages > 1) { %>
-                                    <div class="flex items-center justify-center gap-4">
-                                        <% if (currentPage > 1) {%>
-                                        <a href="?page=<%= currentPage - 1%>" class="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <polyline points="15 18 9 12 15 6"></polyline>
-                                            </svg>
-                                            Previous
-                                        </a>
-                                        <% } else { %>
-                                        <span class="flex items-center gap-2 rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-400">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <polyline points="15 18 9 12 15 6"></polyline>
-                                            </svg>
-                                            Previous
-                                        </span>
-                                        <% } %>
-
-                                        <div class="flex items-center gap-2">
-                                            <% for (int i = 1; i <= totalPages; i++) { %>
-                                            <% if (i == currentPage) {%>
-                                            <span class="rounded-md bg-gradient-to-r from-purple-600 to-blue-600 px-3 py-2 text-sm font-medium text-white"><%= i%></span>
-                                            <% } else {%>
-                                            <a href="?page=<%= i%>" class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"><%= i%></a>
-                                            <% } %>
-                                            <% } %>
-                                        </div>
-
-                                        <% if (currentPage < totalPages) {%>
-                                        <a href="?page=<%= currentPage + 1%>" class="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                            Next
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <polyline points="9 18 15 12 9 6"></polyline>
-                                            </svg>
-                                        </a>
-                                        <% } else { %>
-                                        <span class="flex items-center gap-2 rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-400">
-                                            Next
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <polyline points="9 18 15 12 9 6"></polyline>
-                                            </svg>
-                                        </span>
-                                        <% } %>
-                                    </div>
-                                    <% }%>
+                                    <% } %>
                                 </div>
                             </div>
                         </div>
-
-        </tbody>
-      </table>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
-  </div>
-</div>
 
-                        <!-- JavaScript for interactions -->
-                        <script>
-                            let selectedFiles = [];
+    <!-- JavaScript for interactions -->
+    <script>
+        let selectedFiles = [];
 
-                            // Handle file selection
-                            function handleFileSelect(input) {
-                                selectedFiles = Array.from(input.files);
-                                const selectedFilesDiv = document.getElementById('selected-files');
-                                const fileCountSpan = document.getElementById('file-count');
+        // Handle file selection
+        function handleFileSelect(input) {
+            selectedFiles = Array.from(input.files);
+            const selectedFilesDiv = document.getElementById('selected-files');
+            const fileCountSpan = document.getElementById('file-count');
 
-                                if (selectedFiles.length > 0) {
-                                    // Check if all files are .gsm
-                                    const invalidFiles = selectedFiles.filter(file => !file.name.toLowerCase().endsWith('.gsm'));
+            if (selectedFiles.length > 0) {
+                const invalidFiles = selectedFiles.filter(file => !file.name.toLowerCase().endsWith('.gsm'));
+                if (invalidFiles.length > 0) {
+                    showApiMessage('Only .gsm files are allowed!', 'red');
+                    input.value = '';
+                    selectedFilesDiv.classList.add('hidden');
+                    return;
+                }
+                fileCountSpan.textContent = `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected`;
+                selectedFilesDiv.classList.remove('hidden');
+            } else {
+                selectedFilesDiv.classList.add('hidden');
+            }
+        }
 
-                                    if (invalidFiles.length > 0) {
-                                        showApiMessage('Only .gsm files are allowed!', 'red');
-                                        input.value = '';
-                                        selectedFilesDiv.classList.add('hidden');
-                                        return;
-                                    }
+        // Handle upload button click
+        document.getElementById('upload-btn').addEventListener('click', async () => {
+            if (selectedFiles.length === 0) {
+                showApiMessage('Please select files first', 'red');
+                return;
+            }
 
-                                    fileCountSpan.textContent = `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected`;
-                                    selectedFilesDiv.classList.remove('hidden');
-                                } else {
-                                    selectedFilesDiv.classList.add('hidden');
-                                }
-                            }
+            const uploadBtn = document.getElementById('upload-btn');
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Uploading...
+            `;
 
-                            // Handle upload button click
-                            document.getElementById('upload-btn').addEventListener('click', async () => {
-                                if (selectedFiles.length === 0) {
-                                    showApiMessage('Please select files first', 'red');
-                                    return;
-                                }
+            try {
+                const results = await uploadFilesToApi(selectedFiles);
+                const successCount = results.filter(r => r.success).length;
+                if (successCount === selectedFiles.length) {
+                    showApiMessage(`All ${successCount} files uploaded successfully!`, 'green');
+                } else if (successCount > 0) {
+                    const errorCount = selectedFiles.length - successCount;
+                    showApiMessage(`${successCount} files uploaded, ${errorCount} failed`, 'yellow');
+                } else {
+                    showApiMessage('failed to upload Sound File Already Exist', 'red');
+                }
+                setTimeout(() => {
+                    window.location.reload();
+                }, 4000);
+            } catch (error) {
+                showApiMessage('Error uploading files: ' + error.message, 'red');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-4 w-4">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Upload Files
+                `;
+            }
+        });
 
-                                const uploadBtn = document.getElementById('upload-btn');
-                                uploadBtn.disabled = true;
-                                uploadBtn.innerHTML = `
-                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Uploading...
-                          `;
+        // Function to upload files to API
+        async function uploadFilesToApi(files) {
+            const results = [];
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                try {
+                    const response = await fetch('http://localhost:8080/IVR-Platform/api/soundfiles/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    results.push({success: true, file: file.name, data});
+                } catch (error) {
+                    results.push({success: false, file: file.name, error: error.message});
+                }
+            }
+            return results;
+        }
 
-                                try {
-                                    const results = await uploadFilesToApi(selectedFiles);
-                                    const successCount = results.filter(r => r.success).length;
+        // Function to show API messages
+        function showApiMessage(message, color) {
+            const messageElement = document.getElementById('api-upload-message');
+            const textElement = document.getElementById('api-upload-text');
+            const iconElement = document.getElementById('api-upload-icon');
 
-                                    if (successCount === selectedFiles.length) {
-                                        showApiMessage(`All ${successCount} files uploaded successfully!`, 'green');
-                                    } else if (successCount > 0) {
-                                        const errorCount = selectedFiles.length - successCount;
-                                        showApiMessage(`${successCount} files uploaded, ${errorCount} failed`, 'yellow');
-                                    } else {
-                                        showApiMessage('All files failed to upload', 'red');
-                                    }
+            messageElement.className = 'hidden mt-4 rounded-md p-4';
+            textElement.className = 'text-sm font-medium';
+            iconElement.className = 'h-5 w-5';
 
-                                    // Refresh the page to show new files
-                                    setTimeout(() => {
-                                        window.location.reload();
-                                    }, 2000);
-                                } catch (error) {
-                                    showApiMessage('Error uploading files: ' + error.message, 'red');
-                                } finally {
-                                    uploadBtn.disabled = false;
-                                    uploadBtn.innerHTML = `
-                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-4 w-4">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                              </svg>
-                              Upload Files
-                            `;
-                                }
-                            });
+            if (color === 'green') {
+                messageElement.classList.add('bg-green-50');
+                textElement.classList.add('text-green-800');
+                iconElement.classList.add('text-green-400');
+            } else if (color === 'red') {
+                messageElement.classList.add('bg-red-50');
+                textElement.classList.add('text-red-800');
+                iconElement.classList.add('text-red-400');
+            } else {
+                messageElement.classList.add('bg-yellow-50');
+                textElement.classList.add('text-yellow-800');
+                iconElement.classList.add('text-yellow-400');
+            }
 
-                            // Function to upload files to API
-                            async function uploadFilesToApi(files) {
-                                const results = [];
+            if (textElement) {
+                textElement.innerText = message;
+            }
 
-                                for (const file of files) {
-                                    const formData = new FormData();
-                                    formData.append('file', file);
+            messageElement.classList.remove('hidden');
+            setTimeout(() => {
+                messageElement.classList.add('hidden');
+            }, 5000);
+        }
 
-                                    try {
-                                        const response = await fetch('http://localhost:8080/IVR-Platform/api/soundfiles/upload', {
-                                            method: 'POST',
-                                            body: formData
-                                        });
+        // Function to copy sound name
+        function copyNameFromButton(button) {
+            const name = button.getAttribute('data-name');
+            if (!name) {
+                console.error('No data-name attribute found');
+                showApiMessage('Error: Missing name', 'red');
+                return;
+            }
+            navigator.clipboard.writeText(name).then(() => {
+                showApiMessage(`Copied: `+ name, 'green');
+            }).catch(err => {
+                console.error('Copy failed:', err);
+                showApiMessage('Failed to copy', 'red');
+            });
+        }
 
-                                        if (!response.ok) {
-                                            throw new Error(`HTTP error! status: ${response.status}`);
-                                        }
+        // Function to filter sound cards
+        function filterSounds() {
+            const input = document.getElementById("searchInput").value.toLowerCase();
+            const soundCards = document.querySelectorAll(".sound-card");
 
-                                        const data = await response.json();
-                                        results.push({success: true, file: file.name, data});
-                                    } catch (error) {
-                                        results.push({success: false, file: file.name, error: error.message});
-                                    }
-                                }
-
-                                return results;
-                            }
-
-                            // Function to show API messages
-                            function showApiMessage(message, color) {
-                                const messageElement = document.getElementById('api-upload-message');
-                                const textElement = document.getElementById('api-upload-text');
-                                const iconElement = document.getElementById('api-upload-icon');
-
-                                console.log("Displaying API message:", message); // للتأكد
-
-                                // Reset classes
-                                messageElement.className = 'hidden mt-4 rounded-md p-4';
-                                textElement.className = 'text-sm font-medium';
-                                iconElement.className = 'h-5 w-5';
-
-                                // Set color classes
-                                if (color === 'green') {
-                                    messageElement.classList.add('bg-green-50');
-                                    textElement.classList.add('text-green-800');
-                                    iconElement.classList.add('text-green-400');
-                                } else if (color === 'red') {
-                                    messageElement.classList.add('bg-red-50');
-                                    textElement.classList.add('text-red-800');
-                                    iconElement.classList.add('text-red-400');
-                                } else {
-                                    messageElement.classList.add('bg-yellow-50');
-                                    textElement.classList.add('text-yellow-800');
-                                    iconElement.classList.add('text-yellow-400');
-                                }
-
-                                if (textElement) {
-                                    textElement.innerText = message; // ← بدل textContent
-                                }
-
-                                messageElement.classList.remove('hidden');
-
-                                // Hide message after 5 seconds
-                                setTimeout(() => {
-                                    messageElement.classList.add('hidden');
-                                }, 5000);
-                            }
-
-                            function copyNameFromButton(button) {
-                                const name = button.getAttribute('data-name');
-                                if (!name) {
-                                    console.error('No data-name attribute found');
-                                    showApiMessage('Error: Missing name', 'red');
-                                    return;
-                                }
-
-                                console.log('Decoded name:', name);
-
-                                navigator.clipboard.writeText(name).then(() => {
-                                    console.log("Displaying API message: Copied: " + name);
-                                    showApiMessage(`Copied:  `+ name, 'green');
-                                }).catch(err => {
-                                    console.error('Copy failed:', err);
-                                    showApiMessage('Failed to copy', 'red');
-                                });
-                            }
-
-                        </script>
-
-                    </body>
-                    </html>
+            soundCards.forEach(card => {
+                const soundName = card.querySelector("h3").textContent.toLowerCase();
+                card.style.display = soundName.startsWith(input) ? "" : "none";
+            });
+        }
+    </script>
+</body>
+</html>

@@ -9,7 +9,7 @@
     Author     : syousrei
 --%>
 
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%
@@ -35,7 +35,7 @@ if (pageName.contains("user-management")) {
     description = "Edit and manage your VXML files";
 } else if (pageName.contains("add-sounds")) {
     title = "Sounds Management";
-    description = "Configure your platform Sounds";
+    description = "Manage your audio files and sound resources";
 }else if (pageName.contains("add-services")) {
     title = "Add Services";
     description = "Add new services to your platform";
