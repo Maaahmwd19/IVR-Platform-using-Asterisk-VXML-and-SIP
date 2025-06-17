@@ -95,6 +95,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Include Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" type="image/png" href="../images/logo.png">
 
     <!-- Custom styles -->
     <style>
@@ -155,14 +156,30 @@
             color: #dc2626;
         }
         .upload-area {
-            border: 2px dashed #c4b5fd;
-            background-color: #f3e8ff;
-            color: #7c3aed;
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            color: white;
             transition: all 0.2s ease;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+            border: none;
         }
         .upload-area:hover {
-            border-color: #a78bfa;
-            background-color: #e9d5ff;
+            background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(139, 92, 246, 0.3);
+        }
+        .generate-area {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            transition: all 0.2s ease;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+            border: none;
+        }
+        .generate-area:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
         }
         .loading-spinner {
             border: 2px solid #ffffff;
@@ -279,9 +296,20 @@
                                             />
                                         </div>
 
+                                           <!-- Generate Sound Button -->
+                                           <label for="generate-sound" class="generate-area flex cursor-pointer items-center gap-2 px-4 py-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                                <line x1="12" y1="19" x2="12" y2="22"></line>
+                                            </svg>
+                                            Generate Sound
+                                        </label>
+                                        <input type="button" id="generate-sound" class="hidden" onclick="openGenerateSoundModal()">
+
                                         <!-- Upload Section -->
                                         <div class="flex flex-col gap-4 md:flex-row md:items-center">
-                                            <label for="file-upload" class="upload-area flex cursor-pointer items-center gap-2 rounded-md px-4 py-2">
+                                            <label for="file-upload" class="upload-area flex cursor-pointer items-center gap-2 px-4 py-2">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                                     <polyline points="7 10 12 15 17 10"></polyline>
@@ -301,6 +329,7 @@
                                                     Upload Files
                                                 </button>
                                             </div>
+ 
                                         </div>
                                     </div>
 
@@ -430,6 +459,26 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Generate Sound Modal -->
+    <div id="generateSoundModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Generate Sound from Text</h3>
+                <div class="mt-2 px-7 py-3">
+                    <textarea id="soundText" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Enter text to convert to sound..."></textarea>
+                </div>
+                <div class="flex items-center justify-end gap-3 mt-4">
+                    <button type="button" onclick="closeGenerateSoundModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400">
+                        Cancel
+                    </button>
+                    <button type="button" onclick="generateSound()" class="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-md hover:from-green-700 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-400">
+                        Generate
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- JavaScript for interactions -->
@@ -585,6 +634,69 @@
                 const soundName = card.querySelector("h3").textContent.toLowerCase();
                 card.style.display = soundName.startsWith(input) ? "" : "none";
             });
+        }
+
+        // Generate Sound Modal Functions
+        function openGenerateSoundModal() {
+            document.getElementById('generateSoundModal').classList.remove('hidden');
+        }
+
+        function closeGenerateSoundModal() {
+            document.getElementById('generateSoundModal').classList.add('hidden');
+            document.getElementById('soundText').value = '';
+        }
+
+        async function generateSound() {
+            const text = document.getElementById('soundText').value.trim();
+            if (!text) {
+                showApiMessage('Please enter text to convert to sound', 'red');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/IVR-Platform/api/generated-sounds/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                        'Accept': 'application/json'
+                    },
+                    body: text
+                });
+
+                let responseData;
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        responseData = await response.json();
+                    } catch (e) {
+                        console.error('Error parsing JSON response:', e);
+                        throw new Error('Invalid JSON response from server');
+                    }
+                } else {
+                    const text = await response.text();
+                    try {
+                        responseData = JSON.parse(text);
+                    } catch (e) {
+                        console.error('Error parsing text as JSON:', e);
+                        throw new Error(text || 'Server error occurred');
+                    }
+                }
+
+                if (!response.ok) {
+                    throw new Error(responseData.error || responseData.message || 'Failed to generate sound');
+                }
+
+                const message = 'Sound generated successfully';
+                const fileName = responseData.fileName || 'Unknown file';
+                showApiMessage(`Sound generated successfully: `+ fileName , 'green');
+                closeGenerateSoundModal();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 4000);
+            } catch (error) {
+                console.error('Error generating sound:', error);
+                showApiMessage('Error generating sound: ' + error.message, 'red');
+            }
         }
     </script>
 </body>

@@ -42,7 +42,11 @@ if (pageName.contains("user-management")) {
 } else if (pageName.contains("user-profile")) {
     title = "User Profile";
     description = "Manage your account settings";
-} else if (pageName.contains("settings")) {
+}else if (pageName.contains("java-editor")) {
+    title = "IVR Management";
+    description = "Manage your IVR "; 
+
+ }else if (pageName.contains("settings")) {
     title = "Settings";
     description = "Configure your platform settings";
 }
@@ -54,6 +58,8 @@ if (pageName.contains("user-management")) {
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>header page</title>
+            <link rel="icon" type="image/png" href="../images/logo.png">
+
     </head>
     <!-- Header -->
     <div class="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center sticky top-0 bg-gray-50 z-10 py-4">
@@ -85,14 +91,7 @@ if (pageName.contains("user-management")) {
                 
                 <!-- Dropdown Menu -->
                 <div id="profileMenu" class="absolute right-0 mt-2 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg hidden">
-                    <a href="../profile/profile.jsp" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                        <i class="fa-solid fa-user text-gray-500"></i>
-                        <span>My Profile</span>
-                    </a>
-                    <a href="../profile/settings.jsp" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
-                        <i class="fa-solid fa-gear text-gray-500"></i>
-                        <span>Settings</span>
-                    </a>
+
                     <div class="border-t border-gray-100 my-1" action="/logout"></div>
                     <a href="${pageContext.request.contextPath}/logout" class="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-50">
                         <i class="fa-solid fa-right-from-bracket text-red-500"></i>

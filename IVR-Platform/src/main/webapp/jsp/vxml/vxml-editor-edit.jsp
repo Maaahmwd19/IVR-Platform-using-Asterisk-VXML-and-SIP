@@ -76,8 +76,7 @@
             for (int i = 0; i < files.length; i++) {
                 File file = files[i];
                 String id = String.valueOf(i + 1);
-                String name = file.getName().replace(".gsm", "");
-                String path = "/sounds/en/" + file.getName();
+                String name = file.getName().replace(".gsm", "").replace("_", " ").replace("-", " ");                String path = "/sounds/en/" + file.getName();
                 String size = String.format("%.1f", file.length() / (1024.0 * 1024.0)); // Size in MB
                 String uploadDate = dateFormat.format(new Date(file.lastModified()));
                 sounds.add(new Sound(id, name, path, size, uploadDate));
@@ -139,6 +138,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>VXML Editor - VoxRoute</title>
+    <link rel="icon" type="image/png" href="../images/logo.png">
 
         <!-- Include Tailwind CSS -->
         <script src="https://cdn.tailwindcss.com"></script>
