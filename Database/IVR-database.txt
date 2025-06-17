@@ -50,6 +50,14 @@ CREATE TABLE sound_files (
     CONSTRAINT sound_files_sound_vxml_name_key UNIQUE (sound_vxml_name)
 );
 
+CREATE TABLE generated_sounds (
+    sound_id SERIAL PRIMARY KEY,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    sound_vxml_name VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Inserting data into users
 INSERT INTO users (user_id, username, msisdn, balance) VALUES
 (1, 'mahmoud', '201000000001', 50.00),
