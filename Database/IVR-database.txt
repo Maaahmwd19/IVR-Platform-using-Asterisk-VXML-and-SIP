@@ -172,3 +172,14 @@ INSERT INTO sound_files (sound_id, file_name, file_path, sound_vxml_name) VALUES
 (75, 'support_service.gsm', '/var/lib/asterisk/sounds/ivr/support_service.gsm', 'support service'),
 (76, 'premium_ivr.gsm', '/var/lib/asterisk/sounds/ivr/premium_ivr.gsm', 'premium ivr'),
 (77, 'four_ar.gsm', '/var/lib/asterisk/sounds/ivr/four_ar.gsm', 'four ar');
+
+
+
+
+------
+ALTER TABLE users ADD COLUMN created_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+----
+ALTER TABLE service 
+  ALTER COLUMN service_type DROP NOT NULL,
+  ALTER COLUMN service_fees DROP NOT NULL,
+  ALTER COLUMN vxml_id DROP NOT NULL;
