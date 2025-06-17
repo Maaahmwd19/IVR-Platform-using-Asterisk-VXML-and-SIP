@@ -8,18 +8,16 @@
        private String serviceType;
        private Integer quota;
        private BigDecimal serviceFees;
-       private VXMLFileInfoDTO vxmlFile;
        private String activationStatus;
 
        public ServiceInfoDTO() {}
        public ServiceInfoDTO(Integer serviceId, String serviceName, String serviceType, Integer quota,
-                            BigDecimal serviceFees, VXMLFileInfoDTO vxmlFile, String activationStatus) {
+                            BigDecimal serviceFees,String activationStatus) {
            this.serviceId = serviceId;
            this.serviceName = serviceName;
            this.serviceType = serviceType;
            this.quota = quota;
            this.serviceFees = serviceFees;
-           this.vxmlFile = vxmlFile;
            this.activationStatus = activationStatus;
        }
 
@@ -33,12 +31,8 @@
        public void setQuota(Integer quota) { this.quota = quota; }
        public BigDecimal getServiceFees() { return serviceFees; }
        public void setServiceFees(BigDecimal serviceFees) { this.serviceFees = serviceFees; }
-       public VXMLFileInfoDTO getVxmlFile() { return vxmlFile; }
-       public void setVxmlFile(VXMLFileInfoDTO vxmlFile) { this.vxmlFile = vxmlFile; }
        public String getActivationStatus() { return activationStatus; }
        public void setActivationStatus(String activationStatus) { this.activationStatus = activationStatus; }
 
-    public void setVxmlId(Integer vxmlId) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-    }
+
    }

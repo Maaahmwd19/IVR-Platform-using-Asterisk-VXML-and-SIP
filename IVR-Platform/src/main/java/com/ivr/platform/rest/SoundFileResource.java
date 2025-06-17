@@ -4,6 +4,10 @@ import com.ivr.platform.entity.SoundFile;
 import com.ivr.platform.service.SoundFileService;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonObjectBuilder;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -14,13 +18,48 @@ import javax.ws.rs.core.Response;
 import java.io.*;
 import java.util.List;
 import javax.annotation.PreDestroy;
+import java.util.UUID;
 
 @Path("/soundfiles")
 @Produces(MediaType.APPLICATION_JSON)
 public class SoundFileResource {
 
     private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+    private final SoundFileService soundFileService = new SoundFileService();
     private static final String SOUND_DIR = "/var/lib/asterisk/sounds/ivr";
+    
+    private void generateSoundScript(String text) {
+        try {
+            ProcessBuilder pb = new ProcessBuilder(
+                "/usr/bin/python3",
+                "/var/lib/asterisk/generate_tts.py",
+                text
+            );
+            pb.redirectErrorStream(true);
+            System.out.println("Executing command: " + String.join(" ", pb.command()));
+            Process process = pb.start();
+            
+            // Capture output for debugging
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder output = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+                System.out.println("Python script output: " + line);
+            }
+            
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                System.err.println("Python script failed for text: " + text + " with exit code: " + exitCode);
+                System.err.println("Python script output: " + output.toString());
+                throw new RuntimeException("Failed to generate sound file: " + output.toString());
+            }
+        } catch (Exception e) {
+            System.err.println("Error executing Python script for text " + text + ": " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to generate sound file: " + e.getMessage());
+        }
+    }
 
     /**
      * Retrieves all sound files from the database.
@@ -114,13 +153,76 @@ public class SoundFileResource {
     @Path("/scan")
     public Response scanSoundFiles() {
         try {
-            new SoundFileService().scanAndStoreSoundFiles();
+            soundFileService.scanAndStoreSoundFiles();
             return Response.status(Response.Status.OK)
                     .entity("Sound files scanned and stored successfully")
                     .build();
         } catch (Exception e) {
             throw new WebApplicationException("Failed to scan sound files: " + e.getMessage(),
                     Response.Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Generates a sound file from text using TTS.
+     * Handles POST /soundfiles/generate.
+     */
+    @POST
+    @Path("/generate")
+    @Consumes(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response generateSoundFile(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity("{\"error\": \"Text cannot be empty\"}")
+                .build();
+        }
+
+        EntityManager em = emf.createEntityManager();
+        try {
+            // Generate filename similar to Python script
+            String filenameBase = text.toLowerCase().replace(" ", "_");
+            String fileName = filenameBase + ".gsm";
+            String filePath = SOUND_DIR + File.separator + fileName;
+            String soundVXMLname = text;
+
+            // Check if file already exists
+            File existingFile = new File(filePath);
+            if (existingFile.exists()) {
+                return Response.status(Response.Status.CONFLICT)
+                    .entity("{\"error\": \"Sound file already exists: " + fileName + "\"}")
+                    .build();
+            }
+
+            // Generate sound using Python script
+            generateSoundScript(text);
+
+            // Verify the file was created
+            if (!existingFile.exists()) {
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("{\"error\": \"Failed to generate sound file\"}")
+                    .build();
+            }
+
+            // Save metadata to database
+            em.getTransaction().begin();
+            SoundFile soundFile = new SoundFile(fileName, filePath, soundVXMLname);
+            em.persist(soundFile);
+            em.getTransaction().commit();
+
+            return Response.status(Response.Status.CREATED)
+                .entity(soundFile)
+                .build();
+
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("{\"error\": \"Failed to generate sound: " + e.getMessage() + "\"}")
+                .build();
+        } finally {
+            em.close();
         }
     }
 

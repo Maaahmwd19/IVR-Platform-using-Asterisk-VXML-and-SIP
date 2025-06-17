@@ -44,19 +44,13 @@ public class UserInfoResource {
 
                 List<ServiceInfoDTO> serviceDTOs = userServices.stream().map(us -> {
                     Service service = us.getService();
-                    VXMLFile vxmlFile = service.getVxmlFile();
-                    VXMLFileInfoDTO vxmlDTO = new VXMLFileInfoDTO(
-                            vxmlFile.getVxmlId(),
-                            vxmlFile.getFileName(),
-                            vxmlFile.getFilePath()
-                    );
+
                     return new ServiceInfoDTO(
                             service.getServiceId(),
                             service.getServiceName(),
                             service.getServiceType(),
                             service.getQuota(),
                             service.getServiceFees(),
-                            vxmlDTO,
                             us.getActivationStatus()
                     );
                 }).collect(Collectors.toList());
@@ -120,7 +114,6 @@ public class UserInfoResource {
                         service.getServiceType(),
                         service.getQuota(),
                         service.getServiceFees(),
-                        vxmlDTO,
                         us.getActivationStatus()
                 );
             }).collect(Collectors.toList());

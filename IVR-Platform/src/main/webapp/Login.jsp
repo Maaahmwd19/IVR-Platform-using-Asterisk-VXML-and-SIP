@@ -10,6 +10,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
+        <link rel="icon" type="image/png" href="../images/logo.png">
+
     <style>
         * {
             margin: 0;
@@ -98,6 +100,8 @@
 
  
     </style>
+        <link rel="icon" type="image/png" href="../images/logo.png">
+
 </head>
 <body>
     <div class="login-container">

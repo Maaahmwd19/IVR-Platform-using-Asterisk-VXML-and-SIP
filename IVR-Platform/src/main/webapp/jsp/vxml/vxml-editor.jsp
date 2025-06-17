@@ -76,7 +76,7 @@
             for (int i = 0; i < files.length; i++) {
                 File file = files[i];
                 String id = String.valueOf(i + 1);
-                String name = file.getName().replace(".gsm", "");
+                String name = file.getName().replace(".gsm", "").replace("_", " ").replace("-", " ");
                 String path = "/sounds/en/" + file.getName();
                 String size = String.format("%.1f", file.length() / (1024.0 * 1024.0)); // Size in MB
                 String uploadDate = dateFormat.format(new Date(file.lastModified()));
@@ -145,6 +145,7 @@
 
         <!-- Include Font Awesome -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="icon" type="image/png" href="../images/logo.png">
 
         <!-- Include CodeMirror -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
