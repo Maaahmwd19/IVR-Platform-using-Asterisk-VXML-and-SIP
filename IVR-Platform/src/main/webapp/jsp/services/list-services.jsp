@@ -58,7 +58,6 @@
                 margin-bottom: 0;
                 flex: 1;
                 text-align: right;
-                direction: rtl;
             }
             .search-input {
                 padding: 8px 32px 8px 12px;
@@ -68,8 +67,8 @@
                 border-radius: 6px;
                 background-color: white;
                 color: #111827;
-                text-align: right;
-                direction: rtl;
+                text-align: left;
+                direction: ltr;
             }
             .search-input:focus {
                 outline: none;
@@ -489,10 +488,39 @@
                 </div>
             </div>
         </div>
-<!-- اختبر هذا الزر -->
-<button onclick='confirmDeleteService("5", "Test%20Service")'>Test Delete Service</button>
         
         <script>
+            // Add static services data for fallback
+            const staticServices = [
+                {
+                    serviceId: 1,
+                    serviceName: "Basic IVR",
+                    serviceType: "Voice",
+                    quota: 100,
+                    serviceFees: 5.00
+                },
+                {
+                    serviceId: 2,
+                    serviceName: "Premium IVR",
+                    serviceType: "Voice",
+                    quota: 500,
+                    serviceFees: 15.00
+                },
+                {
+                    serviceId: 3,
+                    serviceName: "Billing Service",
+                    serviceType: "Interactive",
+                    quota: 200,
+                    serviceFees: 8.50
+                },
+                {
+                    serviceId: 4,
+                    serviceName: "Support Service",
+                    serviceType: "Interactive",
+                    quota: 300,
+                    serviceFees: 10.00
+                }
+            ];
 
             // Placeholder for edit modal
             function openEditServiceModal(serviceId) {
@@ -521,8 +549,11 @@
                     const card = document.createElement('div');
                     card.className = 'service-card';
 
-                    const serviceId = service.serviceId || 'N/A';
-                    const serviceName = service.serviceName || 'Unknown Service';
+                    const serviceId = service.serviceId || service.service_id || 'N/A';
+                    const serviceName = service.serviceName || service.service_name || 'Unknown Service';
+                    const serviceType = service.serviceType || service.service_type || 'N/A';
+                    const quota = service.quota || 0;
+                    const serviceFees = service.serviceFees || service.service_fees || 0;
 
                     const initial = serviceName.charAt(0).toUpperCase();
                     const encodedName = encodeURIComponent(serviceName);
@@ -553,63 +584,77 @@
                         method: 'GET',
                         headers: {
                             'Accept': 'application/json',
-                            // Add authentication header if required (e.g., Bearer token)
-                            // 'Authorization': 'Bearer your-token-here'
+                            'Content-Type': 'application/json'
                         },
-                        credentials: 'include' // Include cookies for session-based auth
+                        credentials: 'include'
                     });
 
                     console.log('Response status:', response.status);
-                    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
                     if (!response.ok) {
                         const errorText = await response.text();
-                        throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
+                        console.error('Server response:', errorText);
+                        throw new Error(`Server error: ${response.status} - ${errorText}`);
                     }
 
                     const data = await response.json();
                     console.log('API response data:', data);
 
-                    // Check for logical errors in response (e.g., code: 403)
-                    if (data.code === 403 || data.name === 'i') {
-                        throw new Error('Access forbidden: ' + (data.message || 'Unauthorized request'));
+                    if (!data) {
+                        throw new Error('No data received from server');
                     }
 
-                    renderServices(data);
+                    // Handle both array and object responses
+                    const services = Array.isArray(data) ? data : (data.services || data.data || []);
+                    
+                    if (services.length === 0) {
+                        const cardsContainer = document.getElementById('serviceCardsContainer');
+                        if (cardsContainer) {
+                            cardsContainer.innerHTML = `
+                                <div class="no-services">
+                                    <i class="fas fa-info-circle" style="font-size: 48px; color: #6b7280; margin-bottom: 16px;"></i>
+                                    <p>No services found</p>
+                                    <p style="color: #6b7280; font-size: 14px; margin-top: 8px;">Add your first service using the "Add New Service" button</p>
+                                </div>
+                            `;
+                        }
+                        return;
+                    }
+
+                    renderServices(services);
                 } catch (error) {
                     console.error('Error fetching services:', error);
-                    showCustomAlert(`Failed to load services: ${error.message}. Using static data.`);
-                    renderServices(staticServices); // Fallback to static data
+                    
+                    // Show error state with retry button
+                    const cardsContainer = document.getElementById('serviceCardsContainer');
+                    if (cardsContainer) {
+                        cardsContainer.innerHTML = `
+                            <div class="no-services">
+                                <i class="fas fa-exclamation-circle" style="font-size: 48px; color: #ef4444; margin-bottom: 16px;"></i>
+                                <p>Failed to load services</p>
+                                <p style="color: #6b7280; font-size: 14px; margin-top: 8px;">${error.message}</p>
+                                <button onclick="fetchServices()" style="margin-top: 16px; padding: 8px 16px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    Try Again
+                                </button>
+                            </div>
+                        `;
+                    }
                 }
             }
 
             // Search functionality
-            document.getElementById('searchInput').addEventListener('input', async (e) => {
+            document.getElementById('searchInput').addEventListener('input', (e) => {
                 const searchTerm = e.target.value.toLowerCase();
-                try {
-                    const response = await fetch('http://localhost:8080/IVR-Platform/api/services', {
-                        headers: { 'Accept': 'application/json' },
-                        credentials: 'include'
-                    });
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
-                    }
-                    const data = await response.json();
-                    if (data.code === 403 || data.name === 'i') {
-                        throw new Error('Access forbidden: ' + (data.message || 'Unauthorized request'));
-                    }
-                    const filteredServices = data.filter(service =>
-                        service.serviceName.toLowerCase().includes(searchTerm)
-                    );
-                    renderServices(filteredServices);
-                } catch (error) {
-                    console.error('Error searching services:', error);
-                    showCustomAlert(`Error searching: ${error.message}. Showing static data.`);
-                    renderServices(staticServices.filter(service =>
-                        service.serviceName.toLowerCase().includes(searchTerm)
-                    ));
+                const services = document.querySelectorAll('.service-card');
+                
+                services.forEach(card => {
+                    const serviceName = card.querySelector('.service-name').textContent.toLowerCase();
+                    if (serviceName.includes(searchTerm)) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
                 }
+                });
             });
 
             // Add Service Modal
@@ -691,27 +736,21 @@
                     
                     console.log("Attempting to delete service with ID:", serviceId);
                     const url = `http://localhost:8080/IVR-Platform/api/services/${serviceId}`;
-                    console.log("Delete URL:", url);
                     
                     const response = await fetch(url, {
                         method: 'DELETE',
                         headers: {
-                            'Accept': 'application/json'
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
                         },
                         credentials: 'include'
                     });
-
-                    console.log("Delete response status:", response.status);
-                    console.log("Delete response headers:", Object.fromEntries(response.headers.entries()));
                     
                     if (!response.ok) {
                         const errorText = await response.text();
-                        console.error("Delete failed with status:", response.status);
-                        console.error("Error response:", errorText);
-                        throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
+                        throw new Error(`Failed to delete service: ${errorText}`);
                     }
 
-                    console.log("Service deleted successfully");
                     showCustomAlert('Service deleted successfully!');
                     await fetchServices(); // Refresh the list
                 } catch (error) {
@@ -727,35 +766,19 @@
                     return;
                 }
                 
-                console.log("Confirming deletion for service ID:", serviceId);
                 const serviceName = decodeURIComponent(encodedServiceName);
-                document.getElementById('confirmDeleteBtn').dataset.serviceId = serviceId;
-                document.getElementById('deleteConfirmMessage').textContent = `Are you sure you want to delete "${serviceName}"?`;
-                openDeleteConfirmModal();
-            }
-
-            function openDeleteConfirmModal() {
-                document.getElementById('deleteConfirmModal').style.display = 'flex';
-            }
-
-            function closeDeleteConfirmModal() {
-                document.getElementById('deleteConfirmModal').style.display = 'none';
-            }
-
-            document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-                const serviceId = document.getElementById('confirmDeleteBtn').dataset.serviceId;
-                console.log("Clicked confirm delete, ID:", serviceId);
-
-                if (serviceId) {
+                const modal = document.getElementById('deleteConfirmModal');
+                const message = document.getElementById('deleteConfirmMessage');
+                const confirmBtn = document.getElementById('confirmDeleteBtn');
+                
+                message.textContent = `Are you sure you want to delete "${serviceName}"?`;
+                confirmBtn.onclick = async () => {
                     await deleteService(serviceId);
-                } else {
-                    showCustomAlert("Service ID is missing!");
-                }
-
-                closeDeleteConfirmModal();
-            });
-
-            document.getElementById('cancelDeleteBtn').addEventListener('click', closeDeleteConfirmModal);
+                    modal.style.display = 'none';
+                };
+                
+                modal.style.display = 'flex';
+            }
 
             // Custom Alert
             function showCustomAlert(message) {
@@ -786,7 +809,7 @@
                 showCustomAlert(`An error occurred: ${event.reason.message || event.reason}`);
             };
 
-            // Fetch services on page load
+            // Initialize on page load
             document.addEventListener('DOMContentLoaded', () => {
                 console.log('DOM loaded, fetching services...');
                 fetchServices();

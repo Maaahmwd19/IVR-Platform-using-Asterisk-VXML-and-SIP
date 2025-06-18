@@ -57,11 +57,44 @@ public class Service {
 public List<User> getAllUsers() {
     List<User> users = new ArrayList<>();
     
-    users.add(new User("John Smith", "JS", "+1234567890", "$125.50", "Premium Plan", "active"));
-    users.add(new User("Sarah Johnson", "SJ", "+1234567891", "$89.25", "Basic Plan", "inactive"));
-    users.add(new User("Mike Wilson", "MW", "+1234567892", "$200.00", "Enterprise Plan", "active"));
-    users.add(new User("Emily Davis", "ED", "+1234567893", "$45.75", "Standard Plan", "active"));
-    users.add(new User("David Brown", "DB", "+1234567894", "$0.00", "Basic Plan", "inactive"));
+    try {
+        // Create EntityManager
+        javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+        javax.persistence.EntityManager em = emf.createEntityManager();
+        
+        // Query database
+        String query = "SELECT u FROM User u";
+        System.out.println("Executing query: " + query);
+        
+        List<com.ivr.platform.entity.User> dbUsers = em.createQuery(query, com.ivr.platform.entity.User.class)
+            .getResultList();
+            
+        System.out.println("Found " + dbUsers.size() + " users in database");
+            
+        // Convert database users to display users
+        for (com.ivr.platform.entity.User dbUser : dbUsers) {
+            String initials = dbUser.getUserName().substring(0, 1).toUpperCase();
+            if (dbUser.getUserName().length() > 1) {
+                initials += dbUser.getUserName().substring(1, 2).toUpperCase();
+            }
+            
+            users.add(new User(
+                dbUser.getUserName(),
+                initials,
+                dbUser.getMsisdn(),
+                String.format("$%.2f", dbUser.getBalance()),
+                "Standard Plan",
+                "active"
+            ));
+        }
+        
+        em.close();
+        emf.close();
+        
+    } catch (Exception e) {
+        System.out.println("Error fetching users from database: " + e.getMessage());
+        e.printStackTrace();
+    }
     
     return users;
 }
@@ -70,41 +103,319 @@ public List<User> getAllUsers() {
 public List<Service> getAllServices() {
     List<Service> services = new ArrayList<>();
     
-    services.add(new Service("Premium Plan", 342, 5280, "$42,750.00", "+12%"));
-    services.add(new Service("Enterprise Plan", 128, 3450, "$25,600.00", "+8%"));
-    services.add(new Service("Standard Plan", 567, 4120, "$25,515.00", "+5%"));
-    services.add(new Service("Basic Plan", 211, 1840, "$6,330.00", "-2%"));
+    try {
+        // Create EntityManager
+        javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+        javax.persistence.EntityManager em = emf.createEntityManager();
+        
+        // Query database for active services with their revenue
+        String query = "SELECT s.service_name, " +
+            "COUNT(DISTINCT us.user_id) as user_count, " +
+            "COUNT(DISTINCT us.user_id) * 10 as call_count, " +
+            "SUM(s.service_fees) as revenue, " +
+            "'+5%' as growth " +
+            "FROM user_service us " +
+            "JOIN service s ON us.service_id = s.service_id " +
+            "WHERE us.activation_status = 'Active' " +
+            "GROUP BY s.service_name";
+            
+        System.out.println("Executing query: " + query);
+        
+        List<Object[]> activeServicesData = em.createNativeQuery(query).getResultList();
+            
+        System.out.println("Found " + activeServicesData.size() + " active services");
+            
+        // Convert database services to display services
+        for (Object[] data : activeServicesData) {
+            services.add(new Service(
+                (String) data[0], // serviceName
+                ((Number) data[1]).intValue(), // userCount
+                ((Number) data[2]).intValue(), // callCount
+                String.format("$%.2f", ((Number) data[3]).doubleValue()), // revenue
+                (String) data[4] // growth
+            ));
+        }
+        
+        em.close();
+        emf.close();
+        
+    } catch (Exception e) {
+        System.out.println("Error fetching services from database: " + e.getMessage());
+        e.printStackTrace();
+    }
     
     return services;
 }
 
-// Get calls by day
-public int[] getCallsByDay() {
-    return new int[] {65, 120, 98, 75, 42};
+// Get active services count
+public int getActiveServicesCount() {
+    try {
+        // Create EntityManager
+        javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+        javax.persistence.EntityManager em = emf.createEntityManager();
+        
+        // Query database for count of active services
+        String query = "SELECT COUNT(DISTINCT service_id) FROM user_service WHERE activation_status = 'Active'";
+        System.out.println("Executing query: " + query);
+        
+        javax.persistence.Query nativeQuery = em.createNativeQuery(query);
+        Object result = nativeQuery.getSingleResult();
+        System.out.println("Query result: " + result);
+        
+        int count = ((Number) result).intValue();
+        System.out.println("Active services count: " + count);
+        
+        em.close();
+        emf.close();
+        
+        return count;
+    } catch (Exception e) {
+        System.out.println("Error fetching active services count: " + e.getMessage());
+        e.printStackTrace();
+        return 0;
+    }
 }
 
 // Get weekdays
 public String[] getWeekdays() {
-    return new String[] {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"};
+    return new String[] {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 }
 
 // Get user growth data
 public int[] getUserGrowth() {
-    return new int[] {30, 45, 57, 75, 92, 108};
+    try {
+        // Create EntityManager
+        javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+        javax.persistence.EntityManager em = emf.createEntityManager();
+        
+        // Query to get user count by day of week
+        String query = "SELECT " +
+            "EXTRACT(DOW FROM created_timestamp) as day_of_week, " +
+            "COUNT(*) as user_count " +
+            "FROM users " +
+            "GROUP BY EXTRACT(DOW FROM created_timestamp) " +
+            "ORDER BY day_of_week";
+            
+        System.out.println("Executing user growth query: " + query);
+        
+        List<Object[]> results = em.createNativeQuery(query).getResultList();
+        
+        // Initialize array with 7 days
+        int[] userGrowth = new int[7];
+        
+        // Fill the array with user counts
+        for (Object[] row : results) {
+            int dayOfWeek = ((Number) row[0]).intValue();
+            int userCount = ((Number) row[1]).intValue();
+            userGrowth[dayOfWeek] = userCount;
+        }
+        
+        em.close();
+        emf.close();
+        
+        return userGrowth;
+    } catch (Exception e) {
+        System.out.println("Error fetching user growth: " + e.getMessage());
+        e.printStackTrace();
+        return new int[7];
+    }
 }
 
 // Get months
 public String[] getMonths() {
     return new String[] {"Jan", "Feb", "Mar", "Apr", "May", "Jun"};
 }
+
+// Get total revenue
+public double getTotalRevenue() {
+    try {
+        javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+        javax.persistence.EntityManager em = emf.createEntityManager();
+        String query = "SELECT SUM(s.service_fees) FROM user_service us JOIN service s ON us.service_id = s.service_id WHERE us.activation_status = 'Active'";
+        Object result = em.createNativeQuery(query).getSingleResult();
+        double revenue = result != null ? ((Number) result).doubleValue() : 0.0;
+        em.close();
+        emf.close();
+        return revenue;
+    } catch (Exception e) {
+        System.out.println("Error calculating revenue: " + e.getMessage());
+        e.printStackTrace();
+        return 0.0;
+    }
+}
+
+// Get user growth percentage
+public String getUserGrowthPercentage() {
+    try {
+        // Create EntityManager
+        javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+        javax.persistence.EntityManager em = emf.createEntityManager();
+        
+        // Query to get user counts for today and yesterday
+        String query = "SELECT " +
+            "COUNT(CASE WHEN DATE(created_timestamp) = CURRENT_DATE THEN 1 END) as today_count, " +
+            "COUNT(CASE WHEN DATE(created_timestamp) = CURRENT_DATE - INTERVAL '1 day' THEN 1 END) as yesterday_count " +
+            "FROM users";
+            
+        System.out.println("Executing user growth percentage query: " + query);
+        
+        Object[] result = (Object[]) em.createNativeQuery(query).getSingleResult();
+        
+        int todayCount = ((Number) result[0]).intValue();
+        int yesterdayCount = ((Number) result[1]).intValue();
+        
+        System.out.println("Today's users: " + todayCount + ", Yesterday's users: " + yesterdayCount);
+        
+        // Calculate percentage change
+        double percentageChange = 0.0;
+        if (yesterdayCount > 0) {
+            percentageChange = ((double)(todayCount - yesterdayCount) / yesterdayCount) * 100;
+        }
+        
+        String sign = percentageChange >= 0 ? "+" : "";
+        String growthText = String.format("%s%.1f%% from yesterday", sign, percentageChange);
+        
+        em.close();
+        emf.close();
+        
+        return growthText;
+    } catch (Exception e) {
+        System.out.println("Error calculating user growth percentage: " + e.getMessage());
+        e.printStackTrace();
+        return "+0% from yesterday";
+    }
+}
+
+// Get active services growth
+public String getActiveServicesGrowth() {
+    try {
+        // Create EntityManager
+        javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+        javax.persistence.EntityManager em = emf.createEntityManager();
+        
+        // Query to get active services counts for today and yesterday
+        String query = "SELECT " +
+            "COUNT(DISTINCT CASE WHEN DATE(us.created_timestamp) = CURRENT_DATE THEN us.service_id END) as today_count, " +
+            "COUNT(DISTINCT CASE WHEN DATE(us.created_timestamp) = CURRENT_DATE - INTERVAL '1 day' THEN us.service_id END) as yesterday_count " +
+            "FROM user_service us " +
+            "WHERE us.is_active = true";
+            
+        System.out.println("Executing active services growth query: " + query);
+        
+        Object[] result = (Object[]) em.createNativeQuery(query).getSingleResult();
+        
+        int todayCount = ((Number) result[0]).intValue();
+        int yesterdayCount = ((Number) result[1]).intValue();
+        
+        System.out.println("Today's active services: " + todayCount + ", Yesterday's active services: " + yesterdayCount);
+        
+        // Calculate difference
+        int difference = todayCount - yesterdayCount;
+        String sign = difference >= 0 ? "+" : "";
+        
+        String growthText = String.format("%s%d new services", sign, Math.abs(difference));
+        
+        em.close();
+        emf.close();
+        
+        return growthText;
+    } catch (Exception e) {
+        System.out.println("Error calculating active services growth: " + e.getMessage());
+        e.printStackTrace();
+        return "+0 new services";
+    }
+}
+
+// Get revenue growth percentage
+public String getRevenueGrowthPercentage() {
+    try {
+        javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+        javax.persistence.EntityManager em = emf.createEntityManager();
+        String query = "SELECT " +
+            "COALESCE(SUM(CASE WHEN DATE(us.created_timestamp) = CURRENT_DATE THEN s.service_fees ELSE 0 END), 0) as today_revenue, " +
+            "COALESCE(SUM(CASE WHEN DATE(us.created_timestamp) = CURRENT_DATE - INTERVAL '1 day' THEN s.service_fees ELSE 0 END), 0) as yesterday_revenue " +
+            "FROM user_service us " +
+            "JOIN service s ON us.service_id = s.service_id " +
+            "WHERE us.activation_status = 'Active'";
+        Object[] result = (Object[]) em.createNativeQuery(query).getSingleResult();
+        double todayRevenue = ((Number) result[0]).doubleValue();
+        double yesterdayRevenue = ((Number) result[1]).doubleValue();
+        double percentageChange = 0.0;
+        if (yesterdayRevenue > 0) {
+            percentageChange = ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100;
+        }
+        String sign = percentageChange >= 0 ? "+" : "";
+        String growthText = String.format("%s%.1f%% from yesterday", sign, percentageChange);
+        em.close();
+        emf.close();
+        return growthText;
+    } catch (Exception e) {
+        System.out.println("Error calculating revenue growth: " + e.getMessage());
+        e.printStackTrace();
+        return "+0% from yesterday";
+    }
+}
+
+// Get sounds count
+public int getSoundsCount() {
+    try {
+        javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+        javax.persistence.EntityManager em = emf.createEntityManager();
+        String query = "SELECT COUNT(*) FROM sound_files";
+        Object result = em.createNativeQuery(query).getSingleResult();
+        int count = ((Number) result).intValue();
+        em.close();
+        emf.close();
+        return count;
+    } catch (Exception e) {
+        System.out.println("Error fetching sounds count: " + e.getMessage());
+        e.printStackTrace();
+        return 0;
+    }
+}
+
+// دالة لجلب بيانات عدد المستخدمين النشطين لكل خدمة لكل يوم خلال آخر 7 أيام
+public List<Map<String, Object>> getServiceUserGrowthByDay() {
+    List<Map<String, Object>> data = new ArrayList<>();
+    try {
+        javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+        javax.persistence.EntityManager em = emf.createEntityManager();
+        String query = "SELECT s.service_name, to_char(us.created_timestamp, 'YYYY-MM-DD') as day, COUNT(DISTINCT us.user_id) as user_count " +
+            "FROM user_service us " +
+            "JOIN service s ON us.service_id = s.service_id " +
+            "WHERE us.activation_status = 'Active' AND us.created_timestamp >= CURRENT_DATE - INTERVAL '6 days' " +
+            "GROUP BY s.service_name, day " +
+            "ORDER BY day, s.service_name";
+        List<Object[]> results = em.createNativeQuery(query).getResultList();
+        for (Object[] row : results) {
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("service", row[0]);
+            entry.put("day", row[1]);
+            entry.put("count", ((Number) row[2]).intValue());
+            data.add(entry);
+        }
+        em.close();
+        emf.close();
+    } catch (Exception e) {
+        System.out.println("Error fetching service user growth by day: " + e.getMessage());
+        e.printStackTrace();
+    }
+    return data;
+}
 %>
 
 <%
 // Initialize data
-int totalUsers = 1248;
-int activeServices = 24;
+List<User> users = getAllUsers();
+int totalUsers = users.size();
+System.out.println("Total users count: " + totalUsers);
+int activeServices = getActiveServicesCount();
 int sipCallsToday = 867;
-double revenue = 24563.00;
+double revenue = getTotalRevenue();
+String userGrowthPercentage = getUserGrowthPercentage();
+String activeServicesGrowth = getActiveServicesGrowth();
+String revenueGrowthPercentage = getRevenueGrowthPercentage();
+int soundsCount = getSoundsCount();
 
 // Get the active tab from request parameter or default to "overview"
 String activeTab = request.getParameter("tab");
@@ -112,15 +423,15 @@ if (activeTab == null) {
     activeTab = "overview";
 }
 
-// Get users and services
-List<User> users = getAllUsers();
+// Get services
 List<Service> services = getAllServices();
 
 // Get chart data
-int[] callsByDay = getCallsByDay();
 String[] weekdays = getWeekdays();
 int[] userGrowth = getUserGrowth();
 String[] months = getMonths();
+
+List<Map<String, Object>> serviceUserGrowthByDay = getServiceUserGrowthByDay();
 %>
 
 <!DOCTYPE html>
@@ -129,8 +440,7 @@ String[] months = getMonths();
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>VoxRoute Dashboard</title>
-      <link rel="icon" type="image/png" href="../images/logo.png">
-
+  
   <!-- Include Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -210,9 +520,6 @@ String[] months = getMonths();
               <li class="mr-2">
                 <a href="?tab=overview" class="inline-block p-4 <%= activeTab.equals("overview") ? "tab-active" : "border-transparent hover:text-gray-600 hover:border-gray-300" %>">Overview</a>
               </li>
-              <li class="mr-2">
-                <a href="?tab=calls" class="inline-block p-4 <%= activeTab.equals("calls") ? "tab-active" : "border-transparent hover:text-gray-600 hover:border-gray-300" %>">SIP Calls</a>
-              </li>
             </ul>
           </div>
           
@@ -233,53 +540,43 @@ String[] months = getMonths();
                     </svg>
                   </div>
                   <div class="text-2xl font-bold"><%= totalUsers %></div>
-                  <p class="text-xs text-gray-500">+12% from last month</p>
+                  <p class="text-xs text-gray-500"><%= userGrowthPercentage %></p>
                 </div>
                 <div class="rounded-lg border bg-white p-4 shadow-sm">
                   <div class="flex flex-row items-center justify-between pb-2">
                     <h3 class="text-sm font-medium">Active Services</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-gray-500">
-                      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
+                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                     </svg>
                   </div>
                   <div class="text-2xl font-bold"><%= activeServices %></div>
-                  <p class="text-xs text-gray-500">+2 new services</p>
+                  <p class="text-xs text-gray-500"><%= activeServicesGrowth %></p>
                 </div>
                 <div class="rounded-lg border bg-white p-4 shadow-sm">
                   <div class="flex flex-row items-center justify-between pb-2">
-                    <h3 class="text-sm font-medium">SIP Calls Today</h3>
+                    <h3 class="text-sm font-medium">Sounds</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-gray-500">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                      <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+                      <polygon points="23 9 17 15 23 21"></polygon>
                     </svg>
                   </div>
-                  <div class="text-2xl font-bold"><%= sipCallsToday %></div>
-                  <p class="text-xs text-gray-500">+18.2% from yesterday</p>
+                  <div class="text-2xl font-bold"><%= soundsCount %></div>
+                  <p class="text-xs text-gray-500">Total sound files</p>
                 </div>
                 <div class="rounded-lg border bg-white p-4 shadow-sm">
                   <div class="flex flex-row items-center justify-between pb-2">
                     <h3 class="text-sm font-medium">Revenue</h3>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-gray-500">
-                      <path d="m7 7 10 10"></path>
-                      <path d="M17 7v10H7"></path>
+                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                     </svg>
                   </div>
-                  <div class="text-2xl font-bold">$<fmt:formatNumber value="<%= revenue %>" pattern="#,##0.00"/></div>
-                  <p class="text-xs text-gray-500">+7.4% from last month</p>
+                  <div class="text-2xl font-bold">$<%= String.format("%.2f", revenue) %></div>
+                  <p class="text-xs text-gray-500"><%= revenueGrowthPercentage %></p>
                 </div>
               </div>
 
               <!-- Charts -->
               <div class="mt-6 grid gap-4 md:grid-cols-2">
-                <div class="rounded-lg border bg-white p-4 shadow-sm">
-                  <div class="mb-4">
-                    <h3 class="text-lg font-medium">SIP Calls by Day</h3>
-                    <p class="text-sm text-gray-500">Number of SIP client calls per weekday</p>
-                  </div>
-                  <div style="height: 300px;">
-                    <canvas id="callsChart"></canvas>
-                  </div>
-                </div>
                 <div class="rounded-lg border bg-white p-4 shadow-sm">
                   <div class="mb-4">
                     <h3 class="text-lg font-medium">User Growth</h3>
@@ -289,116 +586,14 @@ String[] months = getMonths();
                     <canvas id="userGrowthChart"></canvas>
                   </div>
                 </div>
-              </div>
-            <% } %>
-
-            <!-- Calls Tab -->
-            <% if (activeTab.equals("calls")) { %>
-              <div class="grid gap-4 md:grid-cols-2">
-                <div class="rounded-lg border bg-white p-4 shadow-sm md:col-span-2">
-                  <div class="mb-4">
-                    <h3 class="text-lg font-medium">SIP Calls by Day</h3>
-                    <p class="text-sm text-gray-500">Detailed breakdown of SIP client calls per weekday</p>
-                  </div>
-                  <div style="height: 400px;">
-                    <canvas id="callsDetailChart"></canvas>
-                  </div>
-                </div>
 
                 <div class="rounded-lg border bg-white p-4 shadow-sm">
                   <div class="mb-4">
-                    <h3 class="text-lg font-medium">Tuesday Calls</h3>
-                    <p class="text-sm text-gray-500">SIP client calls on Tuesday</p>
+                    <h3 class="text-lg font-medium">Service Usage</h3>
+                    <p class="text-sm text-gray-500">Active services distribution</p>
                   </div>
-                  <div class="space-y-4">
-                    <div class="flex items-center justify-between">
-                      <div class="text-sm font-medium">Total Calls</div>
-                      <div class="text-xl font-bold">120</div>
-                    </div>
-                    <div class="space-y-2">
-                      <div class="flex items-center justify-between text-sm">
-                        <div>Premium Users</div>
-                        <div>48 calls (40%)</div>
-                      </div>
-                      <div class="h-2 w-full rounded-full bg-gray-100">
-                        <div class="h-2 rounded-full bg-purple-600" style="width: 40%"></div>
-                      </div>
-                    </div>
-                    <div class="space-y-2">
-                      <div class="flex items-center justify-between text-sm">
-                        <div>Enterprise Users</div>
-                        <div>36 calls (30%)</div>
-                      </div>
-                      <div class="h-2 w-full rounded-full bg-gray-100">
-                        <div class="h-2 rounded-full bg-blue-600" style="width: 30%"></div>
-                      </div>
-                    </div>
-                    <div class="space-y-2">
-                      <div class="flex items-center justify-between text-sm">
-                        <div>Standard Users</div>
-                        <div>24 calls (20%)</div>
-                      </div>
-                      <div class="h-2 w-full rounded-full bg-gray-100">
-                        <div class="h-2 rounded-full bg-indigo-600" style="width: 20%"></div>
-                      </div>
-                    </div>
-                    <div class="space-y-2">
-                      <div class="flex items-center justify-between text-sm">
-                        <div>Basic Users</div>
-                        <div>12 calls (10%)</div>
-                      </div>
-                      <div class="h-2 w-full rounded-full bg-gray-100">
-                        <div class="h-2 rounded-full bg-violet-600" style="width: 10%"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="rounded-lg border bg-white p-4 shadow-sm">
-                  <div class="mb-4">
-                    <h3 class="text-lg font-medium">Wednesday & Thursday</h3>
-                    <p class="text-sm text-gray-500">SIP client calls comparison</p>
-                  </div>
-                  <div class="space-y-6">
-                    <div>
-                      <h4 class="mb-2 text-sm font-medium">Wednesday</h4>
-                      <div class="flex items-center justify-between">
-                        <div class="text-sm text-gray-500">Total Calls</div>
-                        <div class="text-xl font-bold">98</div>
-                      </div>
-                      <div class="mt-2 h-2 w-full rounded-full bg-gray-100">
-                        <div class="h-2 rounded-full bg-purple-600" style="width: 82%"></div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 class="mb-2 text-sm font-medium">Thursday</h4>
-                      <div class="flex items-center justify-between">
-                        <div class="text-sm text-gray-500">Total Calls</div>
-                        <div class="text-xl font-bold">75</div>
-                      </div>
-                      <div class="mt-2 h-2 w-full rounded-full bg-gray-100">
-                        <div class="h-2 rounded-full bg-blue-600" style="width: 63%"></div>
-                      </div>
-                    </div>
-
-                    <div class="rounded-lg border p-4">
-                      <h4 class="mb-2 font-medium">Key Insights</h4>
-                      <ul class="space-y-2 text-sm">
-                        <li class="flex items-center gap-2">
-                          <span class="h-2 w-2 rounded-full bg-purple-600"></span>
-                          <span>Peak hours: 10AM - 2PM</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                          <span class="h-2 w-2 rounded-full bg-blue-600"></span>
-                          <span>23% higher call duration on Wednesday</span>
-                        </li>
-                        <li class="flex items-center gap-2">
-                          <span class="h-2 w-2 rounded-full bg-indigo-600"></span>
-                          <span>12% more international calls on Thursday</span>
-                        </li>
-                      </ul>
-                    </div>
+                  <div style="height: 300px;">
+                    <canvas id="serviceUsageChart"></canvas>
                   </div>
                 </div>
               </div>
@@ -443,28 +638,8 @@ String[] months = getMonths();
       
       // Convert Java arrays to JavaScript arrays
       const weekdays = <%= Arrays.toString(weekdays).replace("[", "['").replace("]", "']").replace(", ", "', '") %>;
-      const callsByDay = <%= Arrays.toString(callsByDay) %>;
       const months = <%= Arrays.toString(months).replace("[", "['").replace("]", "']").replace(", ", "', '") %>;
       const userGrowth = <%= Arrays.toString(userGrowth) %>;
-      
-      // SIP Calls Chart
-      const callsChartEl = document.getElementById('callsChart');
-      if (callsChartEl) {
-        new Chart(callsChartEl, {
-          type: 'bar',
-          data: {
-            labels: weekdays,
-            datasets: [{
-              label: 'SIP Calls',
-              data: callsByDay,
-              backgroundColor: 'rgba(124, 58, 237, 0.8)',
-              borderColor: 'rgba(124, 58, 237, 1)',
-              borderWidth: 1
-            }]
-          },
-          options: chartOptions
-        });
-      }
       
       // User Growth Chart
       const userGrowthChartEl = document.getElementById('userGrowthChart');
@@ -472,7 +647,7 @@ String[] months = getMonths();
         new Chart(userGrowthChartEl, {
           type: 'line',
           data: {
-            labels: months,
+            labels: weekdays,
             datasets: [{
               label: 'New Users',
               data: userGrowth,
@@ -481,28 +656,164 @@ String[] months = getMonths();
               tension: 0.4
             }]
           },
-          options: chartOptions
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top'
+              },
+              title: {
+                display: true,
+                text: 'User Registration by Day'
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Number of Users'
+                }
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: 'Day of Week'
+                }
+              }
+            }
+          }
         });
       }
-      
-      // Detailed Calls Chart
-      const callsDetailChartEl = document.getElementById('callsDetailChart');
-      if (callsDetailChartEl) {
-        new Chart(callsDetailChartEl, {
-          type: 'bar',
-          data: {
-            labels: weekdays,
-            datasets: [{
-              label: 'SIP Calls',
-              data: callsByDay,
-              backgroundColor: 'rgba(124, 58, 237, 0.8)',
-              borderColor: 'rgba(124, 58, 237, 1)',
-              borderWidth: 1
-            }]
+
+      // Service Usage Chart
+      const serviceUsageCtx = document.getElementById('serviceUsageChart').getContext('2d');
+      new Chart(serviceUsageCtx, {
+        type: 'bar',
+        data: {
+          labels: [
+            <% 
+            try {
+                javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+                javax.persistence.EntityManager em = emf.createEntityManager();
+                
+                // Query to get all services with their active user count
+                String query = "SELECT s.service_name, COUNT(us.user_id) as active_users " +
+                             "FROM service s " +
+                             "LEFT JOIN user_service us ON s.service_id = us.service_id AND us.activation_status = 'Active' " +
+                             "GROUP BY s.service_name " +
+                             "ORDER BY s.service_name";
+                             
+                List<Object[]> results = em.createNativeQuery(query).getResultList();
+                
+                for (int i = 0; i < results.size(); i++) {
+                    Object[] row = results.get(i);
+                    out.print("'" + row[0] + "'");
+                    if (i < results.size() - 1) {
+                        out.print(", ");
+                    }
+                }
+                
+                em.close();
+                emf.close();
+            } catch (Exception e) {
+                System.out.println("Error fetching services: " + e.getMessage());
+                e.printStackTrace();
+            }
+            %>
+          ],
+          datasets: [{
+            label: 'Active Users',
+            data: [
+              <% 
+              try {
+                  javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+                  javax.persistence.EntityManager em = emf.createEntityManager();
+                  
+                  String query = "SELECT s.service_name, COUNT(us.user_id) as active_users " +
+                               "FROM service s " +
+                               "LEFT JOIN user_service us ON s.service_id = us.service_id AND us.activation_status = 'Active' " +
+                               "GROUP BY s.service_name " +
+                               "ORDER BY s.service_name";
+                               
+                  List<Object[]> results = em.createNativeQuery(query).getResultList();
+                  
+                  for (int i = 0; i < results.size(); i++) {
+                      Object[] row = results.get(i);
+                      out.print(((Number) row[1]).intValue());
+                      if (i < results.size() - 1) {
+                          out.print(", ");
+                      }
+                  }
+                  
+                  em.close();
+                  emf.close();
+              } catch (Exception e) {
+                  System.out.println("Error fetching service data: " + e.getMessage());
+                  e.printStackTrace();
+              }
+              %>
+            ],
+            backgroundColor: [
+              'rgba(54, 162, 235, 0.8)',
+              'rgba(75, 192, 192, 0.8)',
+              'rgba(255, 206, 86, 0.8)',
+              'rgba(255, 99, 132, 0.8)',
+              'rgba(153, 102, 255, 0.8)',
+              'rgba(255, 159, 64, 0.8)',
+              'rgba(199, 199, 199, 0.8)',
+              'rgba(83, 102, 255, 0.8)',
+              'rgba(40, 159, 64, 0.8)',
+              'rgba(210, 199, 199, 0.8)'
+            ],
+            borderColor: [
+              'rgb(54, 162, 235)',
+              'rgb(75, 192, 192)',
+              'rgb(255, 206, 86)',
+              'rgb(255, 99, 132)',
+              'rgb(153, 102, 255)',
+              'rgb(255, 159, 64)',
+              'rgb(199, 199, 199)',
+              'rgb(83, 102, 255)',
+              'rgb(40, 159, 64)',
+              'rgb(210, 199, 199)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top'
+            },
+            title: {
+              display: true,
+              text: 'Active Users per Service'
+            }
           },
-          options: chartOptions
-        });
-      }
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Number of Active Users'
+              },
+              ticks: {
+                stepSize: 1
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Service Type'
+              }
+            }
+          }
+        }
+      });
     });
 
     // Profile Menu Toggle
