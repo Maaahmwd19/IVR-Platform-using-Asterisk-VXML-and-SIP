@@ -546,15 +546,15 @@
                 }
 
                 services.forEach(function(service) {
+                    const serviceId = service.serviceId || service.service_id;
+                    if (!serviceId || isNaN(parseInt(serviceId))) {
+                        console.warn('Service without valid ID will be skipped:', service);
+                        return;
+                    }
                     const card = document.createElement('div');
                     card.className = 'service-card';
 
-                    const serviceId = service.serviceId || service.service_id || 'N/A';
                     const serviceName = service.serviceName || service.service_name || 'Unknown Service';
-                    const serviceType = service.serviceType || service.service_type || 'N/A';
-                    const quota = service.quota || 0;
-                    const serviceFees = service.serviceFees || service.service_fees || 0;
-
                     const initial = serviceName.charAt(0).toUpperCase();
                     const encodedName = encodeURIComponent(serviceName);
 
@@ -734,10 +734,22 @@
                         throw new Error('Service ID is required');
                     }
                     
-                    console.log("Attempting to delete service with ID:", serviceId);
-                    const url = `http://localhost:8080/IVR-Platform/api/services/${serviceId}`;
+                    // تحويل معرف الخدمة إلى رقم
+                    const numericId = parseInt(serviceId);
+                    if (isNaN(numericId) || numericId <= 0) {
+                        throw new Error('Invalid service ID: ' + serviceId);
+                    }
                     
-                    const response = await fetch(url, {
+                    // طباعة القيم للتأكد
+                    console.log("Raw serviceId:", serviceId);
+                    console.log("Numeric ID:", numericId);
+                    
+                    // تكوين الرابط مع معرف الخدمة
+                    const deleteUrl = 'http://localhost:8080/IVR-Platform/api/services/' + numericId;
+                    console.log("Delete URL:", deleteUrl);
+                    
+                    // إرسال طلب الحذف
+                    const response = await fetch(deleteUrl, {
                         method: 'DELETE',
                         headers: {
                             'Accept': 'application/json',
@@ -750,9 +762,9 @@
                         const errorText = await response.text();
                         throw new Error(`Failed to delete service: ${errorText}`);
                     }
-
+                    
                     showCustomAlert('Service deleted successfully!');
-                    await fetchServices(); // Refresh the list
+                    await fetchServices(); // تحديث القائمة
                 } catch (error) {
                     console.error('Error deleting service:', error);
                     showCustomAlert(`Error deleting service: ${error.message}`);
@@ -766,14 +778,33 @@
                     return;
                 }
                 
+                // طباعة معرف الخدمة للتأكد
+                console.log("Service ID for deletion:", serviceId);
+                
                 const serviceName = decodeURIComponent(encodedServiceName);
                 const modal = document.getElementById('deleteConfirmModal');
                 const message = document.getElementById('deleteConfirmMessage');
                 const confirmBtn = document.getElementById('confirmDeleteBtn');
+                const cancelBtn = document.getElementById('cancelDeleteBtn');
                 
                 message.textContent = `Are you sure you want to delete "${serviceName}"?`;
-                confirmBtn.onclick = async () => {
-                    await deleteService(serviceId);
+                
+                // إزالة أي event listeners موجودة
+                const newConfirmBtn = confirmBtn.cloneNode(true);
+                confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+                
+                // إضافة event listener جديد
+                newConfirmBtn.addEventListener('click', async () => {
+                    try {
+                        await deleteService(serviceId);
+                        modal.style.display = 'none';
+                    } catch (error) {
+                        console.error('Error in delete confirmation:', error);
+                        showCustomAlert(`Error: ${error.message}`);
+                    }
+                });
+                
+                cancelBtn.onclick = () => {
                     modal.style.display = 'none';
                 };
                 
