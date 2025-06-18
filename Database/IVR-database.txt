@@ -60,11 +60,11 @@ CREATE TABLE generated_sounds (
 
 -- Inserting data into users
 INSERT INTO users (user_id, username, msisdn, balance) VALUES
-(1, 'mahmoud', '201000000001', 50.00),
-(2, 'sara', '201000000002', 30.00),
-(3, 'ali', '201000000003', 20.50),
-(4, 'noor', '201000000004', 75.00),
-(5, 'tarek', '201000000005', 10.00);
+(1, 'mahmoud', '01000000001', 50.00),
+(2, 'sara', '01000000002', 30.00),
+(3, 'ali', '01000000003', 20.50),
+(4, 'noor', '01000000004', 75.00),
+(5, 'tarek', '01000000005', 10.00);
 
 -- Inserting data into vxml_files
 INSERT INTO vxml_files (vxml_id, file_name, file_path) VALUES
@@ -172,3 +172,13 @@ INSERT INTO sound_files (sound_id, file_name, file_path, sound_vxml_name) VALUES
 (75, 'support_service.gsm', '/var/lib/asterisk/sounds/ivr/support_service.gsm', 'support service'),
 (76, 'premium_ivr.gsm', '/var/lib/asterisk/sounds/ivr/premium_ivr.gsm', 'premium ivr'),
 (77, 'four_ar.gsm', '/var/lib/asterisk/sounds/ivr/four_ar.gsm', 'four ar');
+
+-- Step 1: Add unique constraint on msisdn
+ALTER TABLE users 
+ADD CONSTRAINT unique_msisdn UNIQUE (msisdn);
+
+-- Step 2: Allow nulls in the service table
+ALTER TABLE service 
+  ALTER COLUMN service_type DROP NOT NULL,
+  ALTER COLUMN service_fees DROP NOT NULL,
+  ALTER COLUMN vxml_id DROP NOT NULL;

@@ -22,16 +22,12 @@ import javax.persistence.PersistenceException;
 @Path("user-info")
 public class UserInfoResource {
 
-    private EntityManager em;
-
-    public UserInfoResource() {
-        EntityManagerFactory emf = Persistence.createEntityManagerFactory("IVRPersistenceUnit");
-        this.em = emf.createEntityManager();
-    }
+    private EntityManagerFactory emf = Persistence.createEntityManagerFactory("IVRPersistenceUnit");
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAllUserInfo() {
+        EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
             List<User> users = em.createQuery("SELECT u FROM User u", User.class).getResultList();
@@ -85,6 +81,7 @@ public class UserInfoResource {
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getUserInfoById(@PathParam("id") Integer userId) {
+        EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
             User user = em.find(User.class, userId);
@@ -147,6 +144,7 @@ public class UserInfoResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response createUser(UserInfoDTO userDTO) {
+        EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
 
@@ -235,10 +233,14 @@ public class UserInfoResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateUser(@PathParam("id") Integer userId, UserInfoDTO userDTO) {
+        System.out.println("[DEBUG] updateUser called with userId: " + userId);
+        System.out.println("[DEBUG] Payload: userId=" + userDTO.getUserId() + ", userName=" + userDTO.getUserName() + ", msisdn=" + userDTO.getMsisdn() + ", balance=" + userDTO.getBalance() + ", services=" + userDTO.getServices());
+        EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
             User user = em.find(User.class, userId);
             if (user == null) {
+                System.out.println("[ERROR] User not found for ID: " + userId);
                 em.getTransaction().commit();
                 return Response.status(Response.Status.NOT_FOUND)
                                .entity("User with ID " + userId + " not found")
@@ -250,11 +252,12 @@ public class UserInfoResource {
                 user.setUserName(userDTO.getUserName());
             }
             if (userDTO.getMsisdn() != null) {
-                // Validate MSISDN format (10 digits)
-                if (!userDTO.getMsisdn().matches("\\d{10}")) {
+                System.out.println("[DEBUG] Validating MSISDN: " + userDTO.getMsisdn());
+                if (!userDTO.getMsisdn().matches("\\d{11}")) {
+                    System.out.println("[ERROR] Invalid MSISDN format: " + userDTO.getMsisdn());
                     em.getTransaction().commit();
                     return Response.status(Response.Status.BAD_REQUEST)
-                                   .entity("MSISDN must be a 10-digit number")
+                                   .entity("MSISDN must be an 11-digit number. Received: " + userDTO.getMsisdn())
                                    .build();
                 }
                 // Check if new MSISDN is unique
@@ -264,6 +267,7 @@ public class UserInfoResource {
                         .setParameter("userId", userId)
                         .getSingleResult();
                 if (msisdnCount > 0) {
+                    System.out.println("[ERROR] MSISDN conflict for: " + userDTO.getMsisdn());
                     em.getTransaction().commit();
                     return Response.status(Response.Status.CONFLICT)
                                    .entity("MSISDN " + userDTO.getMsisdn() + " is already in use")
@@ -272,11 +276,13 @@ public class UserInfoResource {
                 user.setMsisdn(userDTO.getMsisdn());
             }
             if (userDTO.getBalance() != null) {
+                System.out.println("[DEBUG] Setting balance: " + userDTO.getBalance());
                 user.setBalance(userDTO.getBalance());
             }
 
             // Update services if provided
             if (userDTO.getServices() != null) {
+                System.out.println("[DEBUG] Updating services: " + userDTO.getServices());
                 // Remove existing user services
                 em.createQuery("DELETE FROM UserService us WHERE us.user.userId = :userId")
                         .setParameter("userId", userId)
@@ -286,6 +292,7 @@ public class UserInfoResource {
                 for (ServiceInfoDTO serviceDTO : userDTO.getServices()) {
                     Service service = em.find(Service.class, serviceDTO.getServiceId());
                     if (service == null) {
+                        System.out.println("[ERROR] Service not found for ID: " + serviceDTO.getServiceId());
                         em.getTransaction().rollback();
                         return Response.status(Response.Status.BAD_REQUEST)
                                        .entity("Service with ID " + serviceDTO.getServiceId() + " not found")
@@ -303,6 +310,7 @@ public class UserInfoResource {
             em.getTransaction().commit();
             return Response.ok(userDTO).build();
         } catch (PersistenceException pe) {
+            System.out.println("[ERROR] PersistenceException: " + pe.getMessage());
             pe.printStackTrace(); // Log for debugging
             if (em != null && em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
@@ -311,11 +319,12 @@ public class UserInfoResource {
                            .entity("Database error updating user: " + pe.getMessage())
                            .build();
         } catch (Exception e) {
+            System.out.println("[ERROR] Exception: " + e.getMessage());
             e.printStackTrace(); // Log for debugging
             if (em != null && em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+            return Response.status(Response.Status.BAD_REQUEST)
                            .entity("Error updating user: " + e.getMessage())
                            .build();
         } finally {
@@ -329,6 +338,7 @@ public class UserInfoResource {
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteUser(@PathParam("id") Integer userId) {
+        EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
             User user = em.find(User.class, userId);

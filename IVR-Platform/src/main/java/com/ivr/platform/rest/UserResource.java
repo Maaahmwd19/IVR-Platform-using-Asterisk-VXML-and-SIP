@@ -55,20 +55,34 @@ public class UserResource {
 
     @PUT
     @Path("/{id}")
-    public User updateUser(@PathParam("id") Integer id, User updatedUser) {
+    public Response updateUser(@PathParam("id") Integer id, User updatedUser) {
         EntityManager em = emf.createEntityManager();
         try {
             em.getTransaction().begin();
             User user = em.find(User.class, id);
             if (user == null) {
-                throw new WebApplicationException("User not found", Response.Status.NOT_FOUND);
+                em.getTransaction().rollback();
+                return Response.status(Response.Status.NOT_FOUND).entity("User not found").build();
+            }
+            // MSISDN uniqueness check (excluding current user)
+            if (updatedUser.getMsisdn() != null) {
+                Long msisdnCount = em.createQuery(
+                    "SELECT COUNT(u) FROM User u WHERE u.msisdn = :msisdn AND u.userId != :userId", Long.class)
+                    .setParameter("msisdn", updatedUser.getMsisdn())
+                    .setParameter("userId", id)
+                    .getSingleResult();
+                if (msisdnCount > 0) {
+                    em.getTransaction().rollback();
+                    return Response.status(Response.Status.CONFLICT)
+                        .entity("MSISDN " + updatedUser.getMsisdn() + " is already in use").build();
+                }
             }
             user.setUserName(updatedUser.getUserName());
             user.setMsisdn(updatedUser.getMsisdn());
             user.setBalance(updatedUser.getBalance());
             em.merge(user);
             em.getTransaction().commit();
-            return user;
+            return Response.ok(user).build();
         } finally {
             em.close();
         }

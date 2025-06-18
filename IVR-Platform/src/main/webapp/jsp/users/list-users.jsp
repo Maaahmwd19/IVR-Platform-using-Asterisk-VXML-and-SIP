@@ -429,7 +429,7 @@
             }
             .custom-alert-modal .modal-icon {
                 font-size: 48px;
-                color: #28a745; /* Green for success */
+                color: #e74c3c; /* Red for error */
                 margin-bottom: 20px;
             }
             .custom-alert-modal .modal-message {
@@ -575,7 +575,8 @@
                     </div>
                     <div class="form-group">
                         <label for="msisdn">MSISDN</label>
-                        <input type="tel" id="msisdn" name="msisdn" required minlength="11" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '').substring(0, 11);">
+                        <input type="tel" id="msisdn" name="msisdn" required minlength="11" maxlength="11" oninput="validateMsisdn()">
+                        <span id="msisdnError" style="color: #e74c3c; font-size: 13px; display: none;"></span>
                     </div>
                     <div class="form-group">
                         <label for="balance">Balance</label>
@@ -592,7 +593,7 @@
         <!-- Custom Success Alert Modal -->
         <div id="customSuccessAlertModal" class="modal custom-alert-modal">
             <div class="modal-content">
-                <div class="modal-icon">
+                <div class="modal-icon" id="customAlertIcon">
                     <i class="fas fa-check-circle"></i>
                 </div>
                 <p class="modal-message" id="customAlertMessage"></p>
@@ -855,7 +856,17 @@ async function showServices(userId) {
                         console.log('Fetch response:', response);
                         if (!response.ok) {
                             const errorText = await response.text();
-                            throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
+                            const isMsisdnConflict = errorText.includes('already exists') ||
+                                                     errorText.includes('is already in use') ||
+                                                     errorText.includes('ConstraintViolationException') ||
+                                                     errorText.includes('Duplicate entry for key') ||
+                                                     errorText.includes('unique constraint');
+                            if (isMsisdnConflict) {
+                                showCustomAlert('MSISDN already exists.');
+                                return; // Stop further processing
+                            } else {
+                                throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
+                            }
                         }
                         console.log('Service status updated successfully.');
                         showServices(userId);
@@ -911,7 +922,17 @@ async function deleteUser(userId) {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
+            const isMsisdnConflict = errorText.includes('already exists') ||
+                                     errorText.includes('is already in use') ||
+                                     errorText.includes('ConstraintViolationException') ||
+                                     errorText.includes('Duplicate entry for key') ||
+                                     errorText.includes('unique constraint');
+            if (isMsisdnConflict) {
+                showCustomAlert('MSISDN already exists.');
+                return; // Stop further processing
+            } else {
+                throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
+            }
         }
 
         showCustomAlert('User deleted successfully!');
@@ -994,49 +1015,47 @@ document.querySelector('.add-user-btn').addEventListener('click', () => {
     openAddEditUserModal();
 });
 
-document.getElementById('addEditUserForm').addEventListener('submit', async (e) => {
+document.getElementById('addEditUserForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+    if (!validateMsisdn()) {
+        return;
+    }
     const userId = document.getElementById('userId').value;
-    console.log('Submitting form. userId from hidden field:', userId); // DEBUG LOG 4
     const userName = document.getElementById('userName').value;
     const msisdn = document.getElementById('msisdn').value;
     const balance = parseFloat(document.getElementById('balance').value);
 
-    // Explicit client-side validation for MSISDN length
-    if (msisdn.length !== 11) {
-        showCustomAlert('MSISDN must be exactly 11 digits long.');
-        return;
-    }
-
     const method = userId ? 'PUT' : 'POST';
-    const url = userId ? 'http://localhost:8080/IVR-Platform/api/users/' + userId : 'http://localhost:8080/IVR-Platform/api/users';
+    const url = userId
+        ? 'http://localhost:8080/IVR-Platform/api/users/' + userId
+        : 'http://localhost:8080/IVR-Platform/api/users';
+
+    // Build the correct UserInfoDTO payload
+    const payload = {
+        userId: userId ? parseInt(userId) : undefined,
+        userName: userName,
+        msisdn: msisdn,
+        balance: balance // as number
+        // Do not include services
+    };
 
     try {
         const response = await fetch(url, {
             method: method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                userName: userName,
-                msisdn: msisdn,
-                balance: balance
-            })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('API Error Response Text:', errorText); // Log the raw error text for debugging
-
-            const isMsisdnConflict = errorText.includes('ConstraintViolationException') ||
-                                     errorText.includes('Duplicate entry for key') || // More specific for MySQL unique constraint
-                                     errorText.includes('unique constraint'); // Generic for other DBs
-
-            console.log('Is MSISDN conflict detected?', isMsisdnConflict);
-
+            const isMsisdnConflict = errorText.includes('already exists') ||
+                                     errorText.includes('is already in use') ||
+                                     errorText.includes('ConstraintViolationException') ||
+                                     errorText.includes('Duplicate entry for key') ||
+                                     errorText.includes('unique constraint');
             if (isMsisdnConflict) {
                 showCustomAlert('MSISDN already exists.');
-                return; // Stop further processing
+                return;
             } else {
                 throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
             }
@@ -1051,8 +1070,45 @@ document.getElementById('addEditUserForm').addEventListener('submit', async (e) 
     }
 });
 
+function validateMsisdn() {
+    const msisdnInput = document.getElementById('msisdn');
+    const errorSpan = document.getElementById('msisdnError');
+    const value = msisdnInput.value;
+
+    // Only allow digits
+    msisdnInput.value = value.replace(/[^0-9]/g, '').substring(0, 11);
+
+    // Validation
+    let errorMsg = '';
+    if (!/^(010|011|012|015)/.test(msisdnInput.value)) {
+        errorMsg = 'MSISDN must start with 010, 011, 012, or 015.';
+    } else if (msisdnInput.value.length !== 11) {
+        errorMsg = 'MSISDN must be exactly 11 digits.';
+    }
+
+    if (errorMsg) {
+        msisdnInput.style.borderColor = '#e74c3c';
+        errorSpan.textContent = errorMsg;
+        errorSpan.style.display = 'block';
+    } else {
+        msisdnInput.style.borderColor = '';
+        errorSpan.textContent = '';
+        errorSpan.style.display = 'none';
+    }
+    return !errorMsg;
+}
+
 function showCustomAlert(message) {
     document.getElementById('customAlertMessage').textContent = message;
+    const iconDiv = document.getElementById('customAlertIcon');
+    const icon = iconDiv.querySelector('i');
+    if (message.toLowerCase().includes('msisdn already exists') || message.toLowerCase().includes('error')) {
+        icon.className = 'fas fa-times-circle';
+        iconDiv.style.color = '#e74c3c'; // Red
+    } else {
+        icon.className = 'fas fa-check-circle';
+        iconDiv.style.color = '#28a745'; // Green
+    }
     document.getElementById('customSuccessAlertModal').style.display = 'flex';
 }
 
