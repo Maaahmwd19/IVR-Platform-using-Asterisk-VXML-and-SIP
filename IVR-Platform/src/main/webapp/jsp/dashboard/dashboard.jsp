@@ -63,8 +63,13 @@ public List<User> getAllUsers() {
         javax.persistence.EntityManager em = emf.createEntityManager();
         
         // Query database
-        List<com.ivr.platform.entity.User> dbUsers = em.createQuery("SELECT u FROM User u", com.ivr.platform.entity.User.class)
+        String query = "SELECT u FROM User u";
+        System.out.println("Executing query: " + query);
+        
+        List<com.ivr.platform.entity.User> dbUsers = em.createQuery(query, com.ivr.platform.entity.User.class)
             .getResultList();
+            
+        System.out.println("Found " + dbUsers.size() + " users in database");
             
         // Convert database users to display users
         for (com.ivr.platform.entity.User dbUser : dbUsers) {
@@ -403,6 +408,7 @@ public List<Map<String, Object>> getServiceUserGrowthByDay() {
 // Initialize data
 List<User> users = getAllUsers();
 int totalUsers = users.size();
+System.out.println("Total users count: " + totalUsers);
 int activeServices = getActiveServicesCount();
 int sipCallsToday = 867;
 double revenue = getTotalRevenue();
@@ -580,6 +586,16 @@ List<Map<String, Object>> serviceUserGrowthByDay = getServiceUserGrowthByDay();
                     <canvas id="userGrowthChart"></canvas>
                   </div>
                 </div>
+
+                <div class="rounded-lg border bg-white p-4 shadow-sm">
+                  <div class="mb-4">
+                    <h3 class="text-lg font-medium">Service Usage</h3>
+                    <p class="text-sm text-gray-500">Active services distribution</p>
+                  </div>
+                  <div style="height: 300px;">
+                    <canvas id="serviceUsageChart"></canvas>
+                  </div>
+                </div>
               </div>
             <% } %>
           </div>
@@ -658,12 +674,6 @@ List<Map<String, Object>> serviceUserGrowthByDay = getServiceUserGrowthByDay();
                 title: {
                   display: true,
                   text: 'Number of Users'
-                },
-                ticks: {
-                  stepSize: 5,
-                  callback: function(value) {
-                    return value;
-                  }
                 }
               },
               x: {
@@ -676,6 +686,134 @@ List<Map<String, Object>> serviceUserGrowthByDay = getServiceUserGrowthByDay();
           }
         });
       }
+
+      // Service Usage Chart
+      const serviceUsageCtx = document.getElementById('serviceUsageChart').getContext('2d');
+      new Chart(serviceUsageCtx, {
+        type: 'bar',
+        data: {
+          labels: [
+            <% 
+            try {
+                javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+                javax.persistence.EntityManager em = emf.createEntityManager();
+                
+                // Query to get all services with their active user count
+                String query = "SELECT s.service_name, COUNT(us.user_id) as active_users " +
+                             "FROM service s " +
+                             "LEFT JOIN user_service us ON s.service_id = us.service_id AND us.activation_status = 'Active' " +
+                             "GROUP BY s.service_name " +
+                             "ORDER BY s.service_name";
+                             
+                List<Object[]> results = em.createNativeQuery(query).getResultList();
+                
+                for (int i = 0; i < results.size(); i++) {
+                    Object[] row = results.get(i);
+                    out.print("'" + row[0] + "'");
+                    if (i < results.size() - 1) {
+                        out.print(", ");
+                    }
+                }
+                
+                em.close();
+                emf.close();
+            } catch (Exception e) {
+                System.out.println("Error fetching services: " + e.getMessage());
+                e.printStackTrace();
+            }
+            %>
+          ],
+          datasets: [{
+            label: 'Active Users',
+            data: [
+              <% 
+              try {
+                  javax.persistence.EntityManagerFactory emf = javax.persistence.Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+                  javax.persistence.EntityManager em = emf.createEntityManager();
+                  
+                  String query = "SELECT s.service_name, COUNT(us.user_id) as active_users " +
+                               "FROM service s " +
+                               "LEFT JOIN user_service us ON s.service_id = us.service_id AND us.activation_status = 'Active' " +
+                               "GROUP BY s.service_name " +
+                               "ORDER BY s.service_name";
+                               
+                  List<Object[]> results = em.createNativeQuery(query).getResultList();
+                  
+                  for (int i = 0; i < results.size(); i++) {
+                      Object[] row = results.get(i);
+                      out.print(((Number) row[1]).intValue());
+                      if (i < results.size() - 1) {
+                          out.print(", ");
+                      }
+                  }
+                  
+                  em.close();
+                  emf.close();
+              } catch (Exception e) {
+                  System.out.println("Error fetching service data: " + e.getMessage());
+                  e.printStackTrace();
+              }
+              %>
+            ],
+            backgroundColor: [
+              'rgba(54, 162, 235, 0.8)',
+              'rgba(75, 192, 192, 0.8)',
+              'rgba(255, 206, 86, 0.8)',
+              'rgba(255, 99, 132, 0.8)',
+              'rgba(153, 102, 255, 0.8)',
+              'rgba(255, 159, 64, 0.8)',
+              'rgba(199, 199, 199, 0.8)',
+              'rgba(83, 102, 255, 0.8)',
+              'rgba(40, 159, 64, 0.8)',
+              'rgba(210, 199, 199, 0.8)'
+            ],
+            borderColor: [
+              'rgb(54, 162, 235)',
+              'rgb(75, 192, 192)',
+              'rgb(255, 206, 86)',
+              'rgb(255, 99, 132)',
+              'rgb(153, 102, 255)',
+              'rgb(255, 159, 64)',
+              'rgb(199, 199, 199)',
+              'rgb(83, 102, 255)',
+              'rgb(40, 159, 64)',
+              'rgb(210, 199, 199)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top'
+            },
+            title: {
+              display: true,
+              text: 'Active Users per Service'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Number of Active Users'
+              },
+              ticks: {
+                stepSize: 1
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Service Type'
+              }
+            }
+          }
+        }
+      });
     });
 
     // Profile Menu Toggle
@@ -691,74 +829,6 @@ List<Map<String, Object>> serviceUserGrowthByDay = getServiceUserGrowthByDay();
         }
       });
     }
-  </script>
-
-  <!-- رسم بياني لعدد المستخدمين النشطين لكل خدمة لكل يوم -->
-  <div class="mt-8">
-    <h2 class="text-lg font-semibold mb-4">Service User Growth by Day</h2>
-    <div class="bg-white p-4 rounded-lg shadow">
-      <canvas id="serviceUserGrowthChart" width="400" height="200"></canvas>
-    </div>
-  </div>
-
-  <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var chartData = [];
-    <% 
-    for (Map<String, Object> item : serviceUserGrowthByDay) {
-    %>
-        chartData.push({
-            service: '<%= item.get("service") %>',
-            day: '<%= item.get("day") %>',
-            count: <%= item.get("count") %>
-        });
-    <% } %>
-    
-    // Extract days and services
-    var days = [...new Set(chartData.map(item => item.day))];
-    var services = [...new Set(chartData.map(item => item.service))];
-    // تجهيز بيانات كل خدمة
-    var datasets = services.map(function(service, idx) {
-      var color = ['#6366f1', '#f59e42', '#10b981', '#ef4444', '#a21caf', '#0ea5e9'][idx % 6];
-      return {
-        label: service,
-        data: days.map(day => {
-          var found = chartData.find(item => item.day === day && item.service === service);
-          return found ? found.count : 0;
-        }),
-        backgroundColor: color + '80',
-        borderColor: color,
-        borderWidth: 2,
-        fill: false,
-        tension: 0.3
-      };
-    });
-    var ctx = document.getElementById('serviceUserGrowthChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: days,
-        datasets: datasets
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: 'top' },
-          title: { display: true, text: 'Active Users per Service by Day' }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: { display: true, text: 'Active Users' }
-          },
-          x: {
-            title: { display: true, text: 'Day' }
-          }
-        }
-      }
-    });
-  });
   </script>
 </body>
 </html>

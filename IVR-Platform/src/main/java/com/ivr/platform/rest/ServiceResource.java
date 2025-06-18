@@ -14,7 +14,7 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ServiceResource {
-    private final EntityManagerFactory emf = Persistence.createEntityManagerFactory("IVRPersistenceUnit");
+    private static final EntityManagerFactory emf = Persistence.createEntityManagerFactory("IVRPersistenceUnit");
 
 // Helper method to execute the Python script for sound generation
 private void generateSoundScript(String serviceName) {
@@ -52,72 +52,84 @@ private void generateSoundScript(String serviceName) {
     }
 }
 
-
-
     @GET
     public List<Service> getAllServices() {
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = null;
         try {
+            em = emf.createEntityManager();
             return em.createQuery(
-                "SELECT DISTINCT s FROM Service s LEFT JOIN FETCH s.vxmlFile", 
+                "SELECT s FROM Service s", 
                 Service.class)
                 .getResultList();
+        } catch (Exception e) {
+            System.err.println("Error fetching services: " + e.getMessage());
+            e.printStackTrace();
+            throw new WebApplicationException("Failed to fetch services", Response.Status.INTERNAL_SERVER_ERROR);
         } finally {
-            em.close();
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
         }
     }
 
     @GET
     @Path("/{id}")
     public Service getService(@PathParam("id") Integer id) {
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = null;
         try {
-            Service service = em.createQuery(
-                "SELECT s FROM Service s LEFT JOIN FETCH s.vxmlFile WHERE s.serviceId = :id", 
-                Service.class)
-                .setParameter("id", id)
-                .getSingleResult();
-            
+            em = emf.createEntityManager();
+            Service service = em.find(Service.class, id);
             if (service == null) {
                 throw new WebApplicationException("Service not found", Response.Status.NOT_FOUND);
             }
             return service;
+        } catch (Exception e) {
+            System.err.println("Error fetching service: " + e.getMessage());
+            e.printStackTrace();
+            throw new WebApplicationException("Failed to fetch service", Response.Status.INTERNAL_SERVER_ERROR);
         } finally {
-            em.close();
-        }
-    }
-
-
-    
-    @POST
-public Response createService(Service service) {
-    if (service.getServiceName() == null) {
-        throw new WebApplicationException("Service name is required", Response.Status.BAD_REQUEST);
-    }
-    EntityManager em = emf.createEntityManager();
-    try {
-        em.getTransaction().begin();
-        // If vxmlFile is provided, validate it
-        if (service.getVxmlFile() != null && service.getVxmlFile().getVxmlId() != null) {
-            VXMLFile vxmlFile = em.find(VXMLFile.class, service.getVxmlFile().getVxmlId());
-            if (vxmlFile == null) {
-                throw new WebApplicationException("Invalid VXML file ID", Response.Status.BAD_REQUEST);
+            if (em != null && em.isOpen()) {
+                em.close();
             }
-            service.setVxmlFile(vxmlFile);
-        } else {
-            service.setVxmlFile(null); // Explicitly allow null vxmlFile
         }
-        em.persist(service);
-        em.getTransaction().commit();
-        generateSoundScript(service.getServiceName()); // Generate sound for new service
-        return Response.status(Response.Status.CREATED).entity(service).build();
-    } catch (Exception e) {
-        em.getTransaction().rollback();
-        throw new WebApplicationException("Failed to create service: " + e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
-    } finally {
-        em.close();
     }
-}
+
+    @POST
+    public Response createService(Service service) {
+        if (service.getServiceName() == null) {
+            throw new WebApplicationException("Service name is required", Response.Status.BAD_REQUEST);
+        }
+        EntityManager em = null;
+        try {
+            em = emf.createEntityManager();
+            em.getTransaction().begin();
+            // If vxmlFile is provided, validate it
+            if (service.getVxmlFile() != null && service.getVxmlFile().getVxmlId() != null) {
+                VXMLFile vxmlFile = em.find(VXMLFile.class, service.getVxmlFile().getVxmlId());
+                if (vxmlFile == null) {
+                    throw new WebApplicationException("Invalid VXML file ID", Response.Status.BAD_REQUEST);
+                }
+                service.setVxmlFile(vxmlFile);
+            } else {
+                service.setVxmlFile(null); // Explicitly allow null vxmlFile
+            }
+            em.persist(service);
+            em.getTransaction().commit();
+            generateSoundScript(service.getServiceName()); // Generate sound for new service
+            return Response.status(Response.Status.CREATED).entity(service).build();
+        } catch (Exception e) {
+            if (em != null && em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            System.err.println("Error creating service: " + e.getMessage());
+            e.printStackTrace();
+            throw new WebApplicationException("Failed to create service", Response.Status.INTERNAL_SERVER_ERROR);
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+    }
 
     @PUT
     @Path("/{id}")
@@ -126,8 +138,9 @@ public Response createService(Service service) {
             updatedService.getServiceFees() == null || updatedService.getVxmlFile() == null) {
             throw new WebApplicationException("Missing required fields", Response.Status.BAD_REQUEST);
         }
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = null;
         try {
+            em = emf.createEntityManager();
             em.getTransaction().begin();
             Service service = em.find(Service.class, id);
             if (service == null) {
@@ -150,18 +163,25 @@ public Response createService(Service service) {
             }
             return service;
         } catch (Exception e) {
-            em.getTransaction().rollback();
-            throw new WebApplicationException("Failed to update service: " + e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+            if (em != null && em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            System.err.println("Error updating service: " + e.getMessage());
+            e.printStackTrace();
+            throw new WebApplicationException("Failed to update service", Response.Status.INTERNAL_SERVER_ERROR);
         } finally {
-            em.close();
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
         }
     }
 
     @DELETE
     @Path("/{id}")
     public Response deleteService(@PathParam("id") Integer id) {
-        EntityManager em = emf.createEntityManager();
+        EntityManager em = null;
         try {
+            em = emf.createEntityManager();
             em.getTransaction().begin();
             Service service = em.find(Service.class, id);
             if (service == null) {
@@ -171,10 +191,16 @@ public Response createService(Service service) {
             em.getTransaction().commit();
             return Response.status(Response.Status.NO_CONTENT).build();
         } catch (Exception e) {
-            em.getTransaction().rollback();
-            throw new WebApplicationException("Failed to delete service: " + e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+            if (em != null && em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            System.err.println("Error deleting service: " + e.getMessage());
+            e.printStackTrace();
+            throw new WebApplicationException("Failed to delete service", Response.Status.INTERNAL_SERVER_ERROR);
         } finally {
-            em.close();
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
         }
     }
 }
