@@ -158,7 +158,7 @@ public class UserInfoResource {
                                .build();
             }
 
-            // Validate MSISDN format (10 digits)
+            // Validate MSISDN format (11 digits)
             if (!userDTO.getMsisdn().matches("\\d{11}")) {
                 em.getTransaction().commit();
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -250,11 +250,11 @@ public class UserInfoResource {
                 user.setUserName(userDTO.getUserName());
             }
             if (userDTO.getMsisdn() != null) {
-                // Validate MSISDN format (10 digits)
-                if (!userDTO.getMsisdn().matches("\\d{10}")) {
+                // Validate MSISDN format (11 digits)
+                if (!userDTO.getMsisdn().matches("\\d{11}")) {
                     em.getTransaction().commit();
                     return Response.status(Response.Status.BAD_REQUEST)
-                                   .entity("MSISDN must be a 10-digit number")
+                                   .entity("MSISDN must be a 11-digit number")
                                    .build();
                 }
                 // Check if new MSISDN is unique

@@ -667,4 +667,26 @@ public class VXMLFileResource {
             this.message = message;
         }
     }
+
+    @GET
+    @Path("/count")
+    public Response getVXMLFilesCount() {
+        EntityManager em = emf.createEntityManager();
+        try {
+            Long count = em.createQuery("SELECT COUNT(v) FROM VXMLFile v", Long.class)
+                    .getSingleResult();
+            LOGGER.info("Retrieved VXML files count: " + count);
+            return Response.ok(count).build();
+        } catch (Exception e) {
+            LOGGER.severe("Failed to retrieve VXML files count: " + e.getMessage());
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ErrorResponse("Failed to retrieve VXML files count: " + e.getMessage()))
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+    }
 }

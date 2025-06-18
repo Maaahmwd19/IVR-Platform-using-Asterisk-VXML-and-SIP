@@ -74,44 +74,54 @@
 
         <style>
             .sidebar {
-                width: 256px;
+                width: 280px;
                 color: white;
                 display: flex;
                 flex-direction: column;
-                border-right: 1px solid rgba(107, 114, 128, 0.5);
+                border-right: 1px solid rgba(107, 114, 128, 0.2);
                 position: fixed;
                 left: 0;
                 top: 0;
                 overflow: hidden;
                 min-height: 100vh;
+                box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+                transition: all 0.3s ease;
             }
 
             .sidebar-overlay {
                 position: absolute;
                 inset: 0;
-                background-color: rgba(0, 0, 0, 0.4);
-                backdrop-filter: blur(12px);
+                background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5));
+                backdrop-filter: blur(15px);
             }
 
             .sidebar-content {
                 position: relative;
                 z-index: 3;
+                padding: 20px 0;
             }
 
             .logo-container {
-                padding: 16px;
+                padding: 20px;
+                margin-bottom: 10px;
             }
 
             .logo-wrapper {
                 display: flex;
                 align-items: center;
+                transition: transform 0.3s ease;
+            }
+
+            .logo-wrapper:hover {
+                transform: scale(1.02);
             }
 
             .logo {
-                height: 48px;
+                height: 52px;
                 width: auto;
                 object-fit: contain;
                 object-position: left;
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
             }
 
             .sidebar-nav {
@@ -122,39 +132,76 @@
             .nav-items {
                 display: flex;
                 flex-direction: column;
-                gap: 8px;
+                gap: 12px;
             }
 
             .nav-item {
                 display: flex;
                 align-items: center;
-                gap: 12px;
-                padding: 12px 16px;
-                border-radius: 8px;
+                gap: 14px;
+                padding: 14px 18px;
+                border-radius: 12px;
                 cursor: pointer;
-                transition: background-color 0.2s;
-                backdrop-filter: blur(4px);
+                transition: all 0.3s ease;
+                backdrop-filter: blur(8px);
                 color: white;
                 text-decoration: none;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                position: relative;
+                overflow: hidden;
+            }
+
+            .nav-item::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+                transform: translateX(-100%);
+                transition: transform 0.6s ease;
+            }
+
+            .nav-item:hover::before {
+                transform: translateX(100%);
             }
 
             .nav-item:hover {
-                background-color: rgba(255, 255, 255, 0.1);
+                background-color: rgba(255, 255, 255, 0.15);
+                transform: translateX(5px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             }
 
             .nav-item.active {
-                background: linear-gradient(to right, rgba(6, 182, 212, 0.3), rgba(168, 85, 247, 0.3));
-                border: 1px solid rgba(255, 255, 255, 0.2);
+                background: linear-gradient(135deg, rgba(6, 182, 212, 0.4), rgba(168, 85, 247, 0.4));
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             }
 
             .nav-item i {
-                width: 20px;
-                height: 20px;
+                width: 24px;
+                height: 24px;
                 color: white;
-                font-size: 1.1rem;
+                font-size: 1.2rem;
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                transition: transform 0.3s ease;
+            }
+
+            .nav-item:hover i {
+                transform: scale(1.1);
+            }
+
+            .nav-item span {
+                font-weight: 500;
+                letter-spacing: 0.3px;
+                transition: transform 0.3s ease;
+            }
+
+            .nav-item:hover span {
+                transform: translateX(2px);
             }
         </style>
 

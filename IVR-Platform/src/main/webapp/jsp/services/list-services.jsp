@@ -10,202 +10,401 @@
     <link rel="icon" type="image/png" href="../images/logo.png">
 
         <style>
+            :root {
+                --primary-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+                --primary-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
+                --primary-hover-shadow: 0 6px 8px rgba(99, 102, 241, 0.3);
+                --glass-bg: rgba(255, 255, 255, 0.95);
+                --glass-border: 1px solid rgba(255, 255, 255, 0.2);
+                --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            }
+
             * {
                 margin: 0;
                 padding: 0;
                 box-sizing: border-box;
             }
+
             body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                background-color: #f3f4f6;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
                 min-height: 100vh;
                 display: flex;
                 flex-direction: column;
+                color: #1e293b;
+                line-height: 1.5;
             }
+
             .main-container {
                 display: flex;
                 flex: 1;
                 min-height: 100vh;
             }
+
             .content-area {
                 flex: 1;
                 display: flex;
                 flex-direction: column;
-                margin-left: 256px;
+                margin-left: 280px;
+                transition: margin-left 0.3s ease;
             }
+
             .header {
-                background-color: white;
-                border-bottom: 1px solid #e5e7eb;
-                padding: 16px 24px;
+                background: var(--glass-bg);
+                border-bottom: var(--glass-border);
+                padding: 24px 32px;
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
+                box-shadow: var(--glass-shadow);
+                position: sticky;
+                top: 0;
+                z-index: 100;
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
             }
+
             .header h1 {
-                font-size: 24px;
-                font-weight: 600;
-                color: #111827;
+                font-size: 28px;
+                font-weight: 700;
+                color: #0f172a;
+                letter-spacing: -0.025em;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                position: relative;
             }
+
+            .header h1::before {
+                content: '';
+                display: block;
+                width: 4px;
+                height: 24px;
+                background: var(--primary-gradient);
+                border-radius: 2px;
+                animation: pulse 2s infinite;
+            }
+
+            @keyframes pulse {
+                0% { opacity: 1; }
+                50% { opacity: 0.5; }
+                100% { opacity: 1; }
+            }
+
             .header-actions {
                 display: flex;
                 align-items: center;
-                gap: 16px;
-                flex: 1;
-                justify-content: flex-end;
+                gap: 20px;
             }
+
             .search-container {
                 position: relative;
                 margin-bottom: 0;
-                flex: 1;
-                text-align: right;
             }
+
             .search-input {
-                padding: 8px 32px 8px 12px;
+                padding: 12px 20px 12px 48px;
                 width: 100%;
-                max-width: 300px;
-                border: 1px solid #d1d5db;
-                border-radius: 6px;
-                background-color: white;
-                color: #111827;
-                text-align: left;
-                direction: ltr;
+                max-width: 360px;
+                border: 2px solid #e2e8f0;
+                border-radius: 12px;
+                background: var(--glass-bg);
+                color: #1e293b;
+                font-size: 14px;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
             }
+
             .search-input:focus {
                 outline: none;
-                border-color: #8b5cf6;
-                box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+                border-color: #6366f1;
+                box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+                background-color: white;
+                transform: translateY(-1px);
             }
+
             .search-icon {
                 position: absolute;
-                right: 12px;
+                left: 16px;
                 top: 50%;
                 transform: translateY(-50%);
-                color: #9ca3af;
+                color: #94a3b8;
+                font-size: 16px;
+                transition: all 0.3s ease;
             }
+
+            .search-input:focus + .search-icon {
+                color: #6366f1;
+                transform: translateY(-50%) scale(1.1);
+            }
+
             .content {
                 flex: 1;
-                padding: 24px;
-                background-color: #f9fafb;
+                padding: 32px;
+                background: transparent;
             }
+
             .table-container {
-                background-color: white;
-                border-radius: 8px;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                border: 1px solid #e5e7eb;
+                background: var(--glass-bg);
+                border-radius: 16px;
+                box-shadow: var(--glass-shadow);
+                border: var(--glass-border);
                 width: 100%;
                 max-width: 100%;
                 margin: 0 auto;
+                overflow: hidden;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
             }
+
+            .table-container:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+            }
+
             .table-header {
-                padding: 24px;
-                border-bottom: 1px solid #e5e7eb;
+                padding: 28px 32px;
+                border-bottom: var(--glass-border);
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                margin-bottom: 15px;
+                background: rgba(248, 250, 252, 0.8);
             }
+
             .table-title {
-                font-size: 18px;
+                font-size: 20px;
                 font-weight: 600;
-                color: #111827;
-                margin-bottom: 4px;
+                color: #0f172a;
+                margin-bottom: 6px;
+                position: relative;
             }
+
             .table-subtitle {
                 font-size: 14px;
-                color: #6b7280;
-            }
-            .header-actions-in-table-header {
+                color: #64748b;
                 display: flex;
                 align-items: center;
-                gap: 16px;
-                flex: 1;
-                justify-content: flex-end;
+                gap: 8px;
             }
+
+            .table-subtitle::before {
+                content: '';
+                display: block;
+                width: 6px;
+                height: 6px;
+                background: var(--primary-gradient);
+                border-radius: 50%;
+                animation: bounce 1s infinite;
+            }
+
+            @keyframes bounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-3px); }
+            }
+
             .add-service-btn {
-                background: linear-gradient(45deg, #8b5cf6, #ec4899);
+                background: var(--primary-gradient);
                 color: white;
                 border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
+                padding: 12px 24px;
+                border-radius: 12px;
                 cursor: pointer;
                 font-weight: 500;
-                transition: opacity 0.2s;
+                font-size: 14px;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                box-shadow: var(--primary-shadow);
+                position: relative;
+                overflow: hidden;
             }
+
+            .add-service-btn::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.2),
+                    transparent
+                );
+                transition: 0.5s;
+            }
+
+            .add-service-btn:hover::before {
+                left: 100%;
+            }
+
             .add-service-btn:hover {
-                opacity: 0.9;
+                transform: translateY(-2px);
+                box-shadow: var(--primary-hover-shadow);
             }
+
+            .add-service-btn:active {
+                transform: translateY(0);
+            }
+
             .service-cards-container {
                 display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                gap: 20px;
-                padding: 24px;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 24px;
+                padding: 32px;
             }
+
             .service-card {
-                background-color: white;
-                border-radius: 8px;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-                border: 1px solid #e5e7eb;
-                padding: 20px;
+                background: var(--glass-bg);
+                border-radius: 16px;
+                box-shadow: var(--glass-shadow);
+                border: var(--glass-border);
+                padding: 24px;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
-                transition: all 0.2s ease-in-out;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                position: relative;
+                overflow: hidden;
             }
+
+            .service-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 4px;
+                background: var(--primary-gradient);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
             .service-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                transform: translateY(-4px);
+                box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
             }
+
+            .service-card:hover::before {
+                opacity: 1;
+            }
+
             .service-card-header {
                 display: flex;
                 align-items: center;
-                margin-bottom: 15px;
+                margin-bottom: 20px;
             }
+
             .service-initial-circle {
                 width: 48px;
                 height: 48px;
-                border-radius: 50%;
-                background: linear-gradient(45deg, #8b5cf6, #ec4899);
+                border-radius: 12px;
+                background: var(--primary-gradient);
                 color: white;
-                font-size: 24px;
+                font-size: 20px;
                 font-weight: 600;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                margin-right: 15px;
+                margin-right: 16px;
+                box-shadow: var(--primary-shadow);
+                transition: all 0.3s ease;
             }
+
+            .service-card:hover .service-initial-circle {
+                transform: scale(1.1) rotate(5deg);
+            }
+
             .service-name {
                 font-size: 18px;
                 font-weight: 600;
-                color: #111827;
+                color: #0f172a;
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
                 flex-grow: 1;
                 min-width: 0;
             }
+
+            .service-card-body {
+                margin-bottom: 20px;
+            }
+
+            .service-card-body p {
+                color: #64748b;
+                font-size: 14px;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .service-card-body i {
+                color: #6366f1;
+                font-size: 16px;
+            }
+
             .service-card-actions {
                 display: flex;
                 gap: 8px;
                 justify-content: flex-end;
                 margin-top: auto;
             }
+
             .action-btn {
-                background-color: transparent;
-                color: #9ca3af;
-                width: 32px;
-                height: 32px;
+                width: 36px;
+                height: 36px;
                 border: none;
-                border-radius: 4px;
+                border-radius: 8px;
                 cursor: pointer;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                transition: all 0.2s;
+                transition: all 0.3s ease;
+                background: var(--glass-bg);
+                color: #64748b;
+                font-size: 16px;
+                position: relative;
+                overflow: hidden;
             }
+
+            .action-btn::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: var(--primary-gradient);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
             .action-btn:hover {
-                background-color: #fee2e2;
+                transform: translateY(-2px);
+                box-shadow: var(--primary-shadow);
+            }
+
+            .action-btn:hover::before {
+                opacity: 0.1;
+            }
+
+            .action-btn i {
+                position: relative;
+                z-index: 1;
+            }
+
+            .delete-btn:hover {
                 color: #ef4444;
             }
+
             .modal {
                 display: none;
                 position: fixed;
@@ -213,168 +412,424 @@
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background-color: rgba(0, 0, 0, 0.5);
+                background: rgba(15, 23, 42, 0.7);
                 z-index: 1000;
                 justify-content: center;
                 align-items: center;
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                opacity: 0;
+                transition: opacity 0.3s ease;
             }
+
+            .modal.show {
+                display: flex !important;
+                opacity: 1;
+            }
+
             .modal-content {
-                background-color: white;
-                border-radius: 8px;
+                background: var(--glass-bg);
+                border-radius: 16px;
                 width: 90%;
-                max-width: 400px;
-                padding: 24px;
+                max-width: 500px;
+                padding: 32px;
                 position: relative;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                box-shadow: var(--glass-shadow);
+                border: var(--glass-border);
+                transform: translateY(20px);
+                opacity: 0;
+                transition: all 0.3s ease;
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
             }
+
+            .modal.show .modal-content {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
             .modal-header {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                margin-bottom: 16px;
+                margin-bottom: 24px;
+                padding-bottom: 20px;
+                border-bottom: var(--glass-border);
             }
+
             .modal-title {
-                font-size: 18px;
+                font-size: 24px;
                 font-weight: 600;
-                color: #111827;
+                color: #0f172a;
+                display: flex;
+                align-items: center;
+                gap: 12px;
             }
+
+            .modal-title::before {
+                content: '';
+                display: block;
+                width: 4px;
+                height: 24px;
+                background: var(--primary-gradient);
+                border-radius: 2px;
+                animation: pulse 2s infinite;
+            }
+
             .close-btn {
                 background: none;
                 border: none;
                 font-size: 24px;
                 cursor: pointer;
-                color: #6b7280;
+                color: #64748b;
+                transition: all 0.3s ease;
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px;
+                position: relative;
+                overflow: hidden;
             }
-            .close-btn:hover {
-                color: #111827;
-            }
-            #addServiceModal .form-group {
-                margin-bottom: 15px;
-            }
-            #addServiceModal label {
-                display: block;
-                margin-bottom: 5px;
-                font-weight: 500;
-                color: #374151;
-            }
-            #addServiceModal input[type="text"] {
+
+            .close-btn::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
                 width: 100%;
-                padding: 10px;
-                border: 1px solid #d1d5db;
-                border-radius: 6px;
-                font-size: 16px;
-                color: #111827;
+                height: 100%;
+                background: var(--primary-gradient);
+                opacity: 0;
+                transition: opacity 0.3s ease;
             }
-            #addServiceModal input[type="text"]:focus {
+
+            .close-btn:hover {
+                color: #0f172a;
+            }
+
+            .close-btn:hover::before {
+                opacity: 0.1;
+            }
+
+            .close-btn i {
+                position: relative;
+                z-index: 1;
+            }
+
+            .form-group {
+                margin-bottom: 24px;
+            }
+
+            .form-group label {
+                display: block;
+                margin-bottom: 10px;
+                font-weight: 500;
+                color: #475569;
+                font-size: 14px;
+            }
+
+            .form-group input[type="text"] {
+                width: 100%;
+                padding: 12px 16px;
+                border: 2px solid #e2e8f0;
+                border-radius: 10px;
+                font-size: 14px;
+                color: #1e293b;
+                transition: all 0.3s ease;
+                background: var(--glass-bg);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+            }
+
+            .form-group input[type="text"]:focus {
                 outline: none;
-                border-color: #8b5cf6;
-                box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+                border-color: #6366f1;
+                box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+                background-color: white;
+                transform: translateY(-1px);
             }
+
             .modal-actions {
                 display: flex;
                 justify-content: flex-end;
-                gap: 10px;
-                margin-top: 20px;
+                gap: 16px;
+                margin-top: 32px;
             }
+
             .btn-primary {
-                background: linear-gradient(45deg, #8b5cf6, #ec4899);
+                background: var(--primary-gradient);
                 color: white;
                 border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
+                padding: 12px 24px;
+                border-radius: 10px;
                 cursor: pointer;
                 font-weight: 500;
-                transition: opacity 0.2s;
+                transition: all 0.3s ease;
+                box-shadow: var(--primary-shadow);
+                position: relative;
+                overflow: hidden;
             }
+
+            .btn-primary::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.2),
+                    transparent
+                );
+                transition: 0.5s;
+            }
+
+            .btn-primary:hover::before {
+                left: 100%;
+            }
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: var(--primary-hover-shadow);
+            }
+
             .btn-secondary {
-                background-color: #e5e7eb;
-                color: #374151;
+                background: var(--glass-bg);
+                color: #475569;
                 border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
+                padding: 12px 24px;
+                border-radius: 10px;
                 cursor: pointer;
                 font-weight: 500;
-                transition: background-color 0.2s;
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
             }
+
+            .btn-secondary::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: var(--primary-gradient);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
             .btn-secondary:hover {
-                background-color: #d1d5db;
+                color: #0f172a;
+                transform: translateY(-2px);
             }
+
+            .btn-secondary:hover::before {
+                opacity: 0.1;
+            }
+
+            .btn-secondary span {
+                position: relative;
+                z-index: 1;
+            }
+
             .delete-confirm-modal .modal-content {
                 max-width: 400px;
                 text-align: center;
             }
+
             .delete-confirm-modal .modal-header {
                 justify-content: center;
                 border-bottom: none;
                 margin-bottom: 0;
             }
+
             .delete-confirm-modal .modal-title {
-                font-size: 20px;
-                margin-bottom: 10px;
+                font-size: 24px;
+                margin-bottom: 16px;
             }
+
             .delete-confirm-modal p {
-                color: #4b5563;
-                margin-bottom: 20px;
+                color: #475569;
+                margin-bottom: 28px;
+                font-size: 16px;
+                line-height: 1.6;
             }
+
             .delete-confirm-modal .modal-actions {
                 display: flex;
                 justify-content: center;
-                gap: 15px;
+                gap: 16px;
             }
+
             .delete-confirm-modal .btn-delete-confirm {
-                background-color: #ef4444;
+                background: linear-gradient(135deg, #ef4444, #dc2626);
                 color: white;
                 border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
+                padding: 12px 24px;
+                border-radius: 10px;
                 cursor: pointer;
                 font-weight: 500;
-                transition: background-color 0.2s;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);
+                position: relative;
+                overflow: hidden;
             }
+
+            .delete-confirm-modal .btn-delete-confirm::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.2),
+                    transparent
+                );
+                transition: 0.5s;
+            }
+
+            .delete-confirm-modal .btn-delete-confirm:hover::before {
+                left: 100%;
+            }
+
             .delete-confirm-modal .btn-delete-confirm:hover {
-                background-color: #dc2626;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 8px rgba(239, 68, 68, 0.3);
             }
+
             .delete-confirm-modal .btn-cancel-delete {
-                background-color: #e5e7eb;
-                color: #374151;
+                background: var(--glass-bg);
+                color: #475569;
                 border: none;
-                padding: 10px 20px;
-                border-radius: 6px;
+                padding: 12px 24px;
+                border-radius: 10px;
                 cursor: pointer;
                 font-weight: 500;
-                transition: background-color 0.2s;
+                transition: all 0.3s ease;
+                position: relative;
+                overflow: hidden;
             }
+
+            .delete-confirm-modal .btn-cancel-delete::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: var(--primary-gradient);
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
             .delete-confirm-modal .btn-cancel-delete:hover {
-                background-color: #d1d5db;
+                color: #0f172a;
+                transform: translateY(-2px);
             }
+
+            .delete-confirm-modal .btn-cancel-delete:hover::before {
+                opacity: 0.1;
+            }
+
+            .delete-confirm-modal .btn-cancel-delete span {
+                position: relative;
+                z-index: 1;
+            }
+
             .custom-alert-modal .modal-content {
                 max-width: 350px;
                 text-align: center;
-                padding: 30px;
+                padding: 36px;
             }
+
             .custom-alert-modal .modal-icon {
-                font-size: 48px;
-                color: #28a745;
-                margin-bottom: 20px;
+                font-size: 56px;
+                color: #16a34a;
+                margin-bottom: 24px;
+                animation: scaleIn 0.5s ease;
             }
+
+            @keyframes scaleIn {
+                0% {
+                    transform: scale(0);
+                    opacity: 0;
+                }
+                50% {
+                    transform: scale(1.2);
+                }
+                100% {
+                    transform: scale(1);
+                    opacity: 1;
+                }
+            }
+
             .custom-alert-modal .modal-message {
-                font-size: 18px;
-                color: #333;
-                margin-bottom: 25px;
+                font-size: 16px;
+                color: #1e293b;
+                margin-bottom: 28px;
+                line-height: 1.6;
             }
+
             .custom-alert-modal .modal-footer button {
-                background: linear-gradient(45deg, #8b5cf6, #ec4899);
+                background: var(--primary-gradient);
                 color: white;
                 border: none;
-                padding: 10px 25px;
-                border-radius: 6px;
+                padding: 12px 28px;
+                border-radius: 10px;
                 cursor: pointer;
                 font-weight: 500;
-                transition: opacity 0.2s;
+                transition: all 0.3s ease;
+                box-shadow: var(--primary-shadow);
+                position: relative;
+                overflow: hidden;
             }
+
+            .custom-alert-modal .modal-footer button::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.2),
+                    transparent
+                );
+                transition: 0.5s;
+            }
+
+            .custom-alert-modal .modal-footer button:hover::before {
+                left: 100%;
+            }
+
             .custom-alert-modal .modal-footer button:hover {
-                opacity: 0.9;
+                transform: translateY(-2px);
+                box-shadow: var(--primary-hover-shadow);
             }
+
+            .no-services {
+                text-align: center;
+                padding: 48px;
+                color: #64748b;
+                font-size: 16px;
+                background: var(--glass-bg);
+                border-radius: 16px;
+                border: var(--glass-border);
+                margin: 24px;
+                box-shadow: var(--glass-shadow);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+            }
+
             @media (max-width: 768px) {
                 .content-area {
                     margin-left: 0;
@@ -388,16 +843,24 @@
                 .table-container {
                     max-width: 100%;
                 }
-            }
-            .no-services {
-                text-align: center;
-                padding: 40px;
-                color: #6b7280;
-                font-size: 16px;
-                background-color: #f9fafb;
-                border-radius: 8px;
-                border: 1px dashed #d1d5db;
-                margin: 20px;
+                .header {
+                    padding: 20px;
+                }
+                .header h1 {
+                    font-size: 24px;
+                }
+                .search-input {
+                    max-width: 100%;
+                }
+                .modal-content {
+                    width: 95%;
+                    margin: 16px;
+                    padding: 24px;
+                }
+                .service-cards-container {
+                    grid-template-columns: 1fr;
+                    padding: 16px;
+                }
             }
         </style>
     </head>
@@ -475,16 +938,6 @@
                 <p class="modal-message" id="customAlertMessage"></p>
                 <div class="modal-footer">
                     <button onclick="closeCustomAlert()">OK</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="deleteConfirmModal" class="modal">
-            <div class="modal-content">
-                <p id="deleteConfirmMessage"></p>
-                <div class="modal-actions">
-                    <button id="confirmDeleteBtn">Yes, Delete</button>
-                    <button id="cancelDeleteBtn">Cancel</button>
                 </div>
             </div>
         </div>
@@ -659,71 +1112,156 @@
 
             // Add Service Modal
             function openAddServiceModal() {
-                document.getElementById('addServiceModal').style.display = 'flex';
+                console.log('Opening add service modal...');
+                const modal = document.getElementById('addServiceModal');
+                if (!modal) {
+                    console.error('Add service modal element not found!');
+                    return;
+                }
+                console.log('Modal element found, setting display to flex');
+                modal.style.display = 'flex';
+                // Add show class after a small delay to trigger the animation
+                setTimeout(() => {
+                    modal.classList.add('show');
+                }, 10);
             }
 
             function closeAddServiceModal() {
-                document.getElementById('addServiceModal').style.display = 'none';
+                console.log('Closing add service modal...');
+                const modal = document.getElementById('addServiceModal');
+                if (!modal) {
+                    console.error('Add service modal element not found!');
+                    return;
+                }
+                modal.classList.remove('show');
+                // Remove display: flex after animation completes
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
                 document.getElementById('addServiceForm').reset();
             }
 
-            document.querySelector('.add-service-btn').addEventListener('click', openAddServiceModal);
+            // Custom Alert
+            function showCustomAlert(message, isError = false) {
+                const modal = document.getElementById('customSuccessAlertModal');
+                const messageEl = document.getElementById('customAlertMessage');
+                const iconEl = modal.querySelector('.modal-icon i');
+                
+                // Set message
+                messageEl.textContent = message;
+                
+                // Update icon and color based on message type
+                if (isError) {
+                    iconEl.className = 'fas fa-exclamation-circle';
+                    iconEl.style.color = '#ef4444'; // Red color for error
+                } else {
+                    iconEl.className = 'fas fa-check-circle';
+                    iconEl.style.color = '#16a34a'; // Green color for success
+                }
+                
+                modal.style.display = 'flex';
+                setTimeout(() => {
+                    modal.classList.add('show');
+                }, 10);
+            }
 
-            document.getElementById('addServiceForm').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const serviceName = document.getElementById('serviceName').value;
+            function closeCustomAlert() {
+                const modal = document.getElementById('customSuccessAlertModal');
+                modal.classList.remove('show');
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                }, 300);
+            }
 
-                try {
-                    // First check if service exists
-                    const checkResponse = await fetch('http://localhost:8080/IVR-Platform/api/services', {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json'
-                        },
-                        credentials: 'include'
+            // Initialize on page load
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('DOM loaded, initializing...');
+                
+                // Fetch initial services
+                console.log('Fetching initial services...');
+                fetchServices();
+                
+                // Debug: Check if button exists
+                const addServiceBtn = document.querySelector('.add-service-btn');
+                console.log('Add Service button found:', !!addServiceBtn);
+                
+                if (addServiceBtn) {
+                    console.log('Adding click event listener to Add Service button');
+                    addServiceBtn.addEventListener('click', () => {
+                        console.log('Add Service button clicked');
+                        openAddServiceModal();
                     });
+                } else {
+                    console.error('Add Service button not found!');
+                }
 
-                    if (!checkResponse.ok) {
-                        throw new Error(`HTTP error! Status: ${checkResponse.status}`);
-                    }
+                // Debug: Check if form exists
+                const addServiceForm = document.getElementById('addServiceForm');
+                console.log('Add Service form found:', !!addServiceForm);
+                
+                if (addServiceForm) {
+                    console.log('Adding submit event listener to Add Service form');
+                    addServiceForm.addEventListener('submit', async (e) => {
+                        console.log('Form submitted');
+                        e.preventDefault();
+                        const serviceName = document.getElementById('serviceName').value;
+                        console.log('Service name:', serviceName);
 
-                    const existingServices = await checkResponse.json();
-                    const serviceExists = existingServices.some(service => 
-                        service.serviceName.toLowerCase() === serviceName.toLowerCase()
-                    );
+                        try {
+                            // First check if service exists
+                            const checkResponse = await fetch('http://localhost:8080/IVR-Platform/api/services', {
+                                method: 'GET',
+                                headers: {
+                                    'Accept': 'application/json'
+                                },
+                                credentials: 'include'
+                            });
 
-                    if (serviceExists) {
-                        showCustomAlert('Service already exists!');
-                        return;
-                    }
+                            if (!checkResponse.ok) {
+                                throw new Error(`HTTP error! Status: ${checkResponse.status}`);
+                            }
 
-                    // If service doesn't exist, proceed with adding it
-                    const response = await fetch('http://localhost:8080/IVR-Platform/api/services', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        credentials: 'include',
-                        body: JSON.stringify({ serviceName })
+                            const existingServices = await checkResponse.json();
+                            const serviceExists = existingServices.some(service => 
+                                service.serviceName.toLowerCase() === serviceName.toLowerCase()
+                            );
+
+                            if (serviceExists) {
+                                showCustomAlert('Service already exists!', true);
+                                return;
+                            }
+
+                            // If service doesn't exist, proceed with adding it
+                            const response = await fetch('http://localhost:8080/IVR-Platform/api/services', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                credentials: 'include',
+                                body: JSON.stringify({ serviceName })
+                            });
+
+                            if (!response.ok) {
+                                const errorText = await response.text();
+                                throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
+                            }
+
+                            const data = await response.json();
+                            if (data.code === 403 || data.name === 'i') {
+                                throw new Error('Access forbidden: ' + (data.message || 'Unauthorized request'));
+                            }
+
+                            showCustomAlert('Service added successfully!');
+                            closeAddServiceModal();
+                            fetchServices();
+                        } catch (error) {
+                            console.error('Error adding service:', error);
+                            showCustomAlert(`Error adding service: ${error.message}`, true);
+                        }
                     });
-
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
-                    }
-
-                    const data = await response.json();
-                    if (data.code === 403 || data.name === 'i') {
-                        throw new Error('Access forbidden: ' + (data.message || 'Unauthorized request'));
-                    }
-
-                    showCustomAlert('Service added successfully!');
-                    closeAddServiceModal();
-                    fetchServices();
-                } catch (error) {
-                    console.error('Error adding service:', error);
-                    showCustomAlert(`Error adding service: ${error.message}`);
+                } else {
+                    console.error('Add Service form not found!');
                 }
             });
 
@@ -811,16 +1349,6 @@
                 modal.style.display = 'flex';
             }
 
-            // Custom Alert
-            function showCustomAlert(message) {
-                document.getElementById('customAlertMessage').textContent = message;
-                document.getElementById('customSuccessAlertModal').style.display = 'flex';
-            }
-
-            function closeCustomAlert() {
-                document.getElementById('customSuccessAlertModal').style.display = 'none';
-            }
-
             // Close modals on outside click
             window.addEventListener('click', (e) => {
                 if (e.target.classList.contains('modal')) {
@@ -839,12 +1367,6 @@
                 console.error('Unhandled promise rejection:', event.reason);
                 showCustomAlert(`An error occurred: ${event.reason.message || event.reason}`);
             };
-
-            // Initialize on page load
-            document.addEventListener('DOMContentLoaded', () => {
-                console.log('DOM loaded, fetching services...');
-                fetchServices();
-            });
         </script>
     </body>
 </html>

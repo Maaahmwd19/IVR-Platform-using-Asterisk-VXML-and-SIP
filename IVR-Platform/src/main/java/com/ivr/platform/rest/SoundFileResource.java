@@ -86,6 +86,26 @@ public class SoundFileResource {
     }
 
     /**
+     * Gets the total count of sound files.
+     * Handles GET /soundfiles/count
+     */
+    @GET
+    @Path("/count")
+    public Response getSoundFilesCount() {
+        EntityManager em = emf.createEntityManager();
+        try {
+            Long count = em.createQuery("SELECT COUNT(s) FROM SoundFile s", Long.class)
+                    .getSingleResult();
+            return Response.ok(count).build();
+        } catch (Exception e) {
+            throw new WebApplicationException("Failed to get sound files count: " + e.getMessage(),
+                    Response.Status.INTERNAL_SERVER_ERROR);
+        } finally {
+            em.close();
+        }
+    }
+
+    /**
      * Uploads a sound file to the server and saves its metadata to the database.
      * Handles POST /soundfiles/upload.
      */

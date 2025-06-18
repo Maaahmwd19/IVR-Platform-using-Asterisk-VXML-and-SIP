@@ -203,4 +203,26 @@ private void generateSoundScript(String serviceName) {
             }
         }
     }
+
+    @GET
+    @Path("/count")
+    public Response getServiceCount() {
+        EntityManager em = null;
+        try {
+            em = emf.createEntityManager();
+            Long count = em.createQuery(
+                "SELECT COUNT(s) FROM Service s", 
+                Long.class)
+                .getSingleResult();
+            return Response.ok(count).build();
+        } catch (Exception e) {
+            System.err.println("Error getting service count: " + e.getMessage());
+            e.printStackTrace();
+            throw new WebApplicationException("Failed to get service count", Response.Status.INTERNAL_SERVER_ERROR);
+        } finally {
+            if (em != null && em.isOpen()) {
+                em.close();
+            }
+        }
+    }
 }
