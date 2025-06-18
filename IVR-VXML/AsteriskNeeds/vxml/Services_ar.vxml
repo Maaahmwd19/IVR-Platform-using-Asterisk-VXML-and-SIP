@@ -1,0 +1,15 @@
+<vxml version="2.1" xmlns="http://www.w3.org/2001/vxml" xml:lang="ar">
+  <form id="servicesForm">
+    <field name="msisdn">
+      <prompt>enter your phone ar try 1  </prompt>
+      <filled>
+        <prompt>your phone ar try 1  <value expr="msisdn"/>.</prompt>
+        <prompt>your service ar></prompt>
+        <prompt><value expr="services_list"/></prompt>
+        <prompt>thank you ar</prompt>
+        <exit/>
+      </filled>
+    </field>
+  </form>
+</vxml> 
+

@@ -11,7 +11,7 @@
 
 <%
     // Define the specific Java file path
-    String javaFilePath = "/home/mibrahim/ITI_Projects/IVR GP/V2/IVR-Platform-using-Asterisk-VXML-and-SIP/IVR-VXML/src/IVRScript.java";
+    String javaFilePath = "/home/syousrei/Videos/itigraduationproject/IVR-Platform-using-Asterisk-VXML-and-SIP/IVR-VXML/src/IVRScript.java";
     File javaFile = new File(javaFilePath);
     
     // Handle file save
@@ -247,7 +247,11 @@
                 extraKeys: {
                     "Ctrl-Space": "autocomplete",
                     "Ctrl-/": "toggleComment"
-                }
+                },
+                workTime: 200,
+                workDelay: 300,
+                lineWiseCopyCut: true,
+                pasteLinesPerSelection: true
             });
 
             function openModal() {
@@ -644,6 +648,30 @@
                     extend: {}
                 }
             }
+
+            // إضافة معالجة الأخطاء
+            editor.on('beforeSelectionChange', function(cm, change) {
+                try {
+                    if (change.ranges) {
+                        change.ranges = change.ranges.map(range => {
+                            if (range.anchor && range.head) {
+                                const doc = cm.getDoc();
+                                const maxLine = doc.lastLine();
+                                const maxCh = doc.getLine(maxLine).length;
+                                
+                                // التأكد من أن المؤشرات ضمن النطاق الصحيح
+                                range.anchor.line = Math.max(0, Math.min(range.anchor.line, maxLine));
+                                range.anchor.ch = Math.max(0, Math.min(range.anchor.ch, maxCh));
+                                range.head.line = Math.max(0, Math.min(range.head.line, maxLine));
+                                range.head.ch = Math.max(0, Math.min(range.head.ch, maxCh));
+                            }
+                            return range;
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error in selection change:', e);
+                }
+            });
         </script>
     </body>
 </html> 

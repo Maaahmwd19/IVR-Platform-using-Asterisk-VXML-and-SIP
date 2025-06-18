@@ -1,0 +1,14 @@
+<vxml version="2.1" xmlns="http://www.w3.org/2001/vxml" xml:lang="en">
+  <form id="balanceForm">
+    <field name="msisdn">
+      <prompt>enter your phone number </prompt>
+      <filled>
+        <prompt>your number en <value expr="msisdn"/>.</prompt>
+        <prompt>balance en  <value expr="balance"/>.</prompt>
+        <prompt>pound en try 2</prompt>
+        <prompt>thank you en</prompt>
+        <exit/>
+      </filled>
+    </field>
+  </form>
+</vxml>

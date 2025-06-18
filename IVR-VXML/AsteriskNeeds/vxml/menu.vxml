@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vxml version="2.1" xmlns="http://www.w3.org/2001/vxml">
+  <form id="main_menu">
+    <field name="dtmf_input" type="digits" maxlength="1">
+      <prompt>long welcome try 1</prompt>
+      <filled>
+        <if cond="dtmf_input == '1'">
+          <goto next="#services_ar_menu"/>
+        </if>
+        <if cond="dtmf_input == '2'">
+          <goto next="#services_en_menu"/>
+        </if>
+        <else>
+          <prompt>incorrect number en try 2  </prompt>
+          <reprompt/>
+        </else>
+      </filled>
+    </field>
+  </form>
+
+  <form id="services_ar_menu">
+    <field name="ar_option" type="digits" maxlength="1">
+      <prompt>services ar</prompt>
+      <filled>
+        <if cond="ar_option == '1'">
+          <goto next="Balance_ar.vxml"/>
+        </if>
+        <if cond="ar_option == '2'">
+          <goto next="Services_ar.vxml"/>
+        </if>
+        <else>
+          <prompt>incorrect number ar</prompt>
+          <reprompt/>
+        </else>
+      </filled>
+    </field>
+  </form>
+
+  <form id="services_en_menu">
+    <field name="en_option" type="digits" maxlength="1">
+      <prompt>services provided en</prompt>
+      <filled>
+        <if cond="en_option == '1'">
+          <goto next="Balance_en.vxml"/>
+        </if>
+        <if cond="en_option == '2'">
+          <goto next="Services_en.vxml"/>
+        </if>
+        <else>
+          <prompt>incorrect number en try 2  </prompt>
+          <reprompt/>
+        </else>
+      </filled>
+    </field>
+  </form>
+</vxml>

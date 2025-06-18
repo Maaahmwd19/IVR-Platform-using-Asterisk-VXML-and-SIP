@@ -15,7 +15,7 @@ import java.util.List;
 public class JavaFileResource {
 
     private static final Logger LOGGER = Logger.getLogger(JavaFileResource.class.getName());
-    private static final String JAVA_DIR = "/home/mibrahim/ITI_Projects/IVR GP/V2/IVR-Platform-using-Asterisk-VXML-and-SIP/IVR-VXML/src"; // it must br change with your 
+    private static final String JAVA_DIR = "/home/syousrei/Videos/itigraduationproject/IVR-Platform-using-Asterisk-VXML-and-SIP/IVR-VXML/src";
     private static final String LIB_DIR = JAVA_DIR + "/../lib";
     private static final String OUT_DIR = JAVA_DIR + "/../out";
     private static final String SRC_DIR = JAVA_DIR;
@@ -98,7 +98,7 @@ public class JavaFileResource {
             }
 
             // Save the file first
-            File file = new File(SRC_DIR, "IVRScript.java");
+            File file = new File(JAVA_DIR, "IVRScript.java");
             try (FileWriter writer = new FileWriter(file, false)) {
                 writer.write(content);
             }
@@ -203,7 +203,7 @@ public class JavaFileResource {
             }
 
             // Save the file first
-            File file = new File(SRC_DIR, "IVRScript.java");
+            File file = new File(JAVA_DIR, "IVRScript.java");
             try (FileWriter writer = new FileWriter(file, false)) {
                 writer.write(content);
             }
@@ -319,7 +319,7 @@ public class JavaFileResource {
                 
                 // Send sudo password
                 try (OutputStreamWriter writer = new OutputStreamWriter(killProcess.getOutputStream())) {
-                    writer.write("19012001\n");
+                    writer.write("0502\n");
                     writer.flush();
                 }
                 
@@ -355,12 +355,12 @@ public class JavaFileResource {
 
             // Send the password to sudo
             try (OutputStreamWriter writer = new OutputStreamWriter(asteriskProcess.getOutputStream())) {
-                writer.write("19012001\n");
+                writer.write("0502\n");
                 writer.flush();
             }
 
             // Wait a bit to check if process started successfully
-            Thread.sleep(2000);
+            Thread.sleep(6000);
             
             if (asteriskProcess.isAlive()) {
                 return Response.ok(new SuccessResponse("Asterisk started successfully")).build();
